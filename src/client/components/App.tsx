@@ -1,21 +1,20 @@
 import * as React from "react"
 
-export function App() {
-	const [{ x, y }, setMouse] = React.useState({ x: 0, y: 0 })
-	React.useEffect(() => {
-		const handleMouseMove = (event: MouseEvent) => {
-			setMouse({ x: event.clientX, y: event.clientY })
-		}
-		window.addEventListener("mousemove", handleMouseMove)
-		return () => {
-			window.removeEventListener("mousemove", handleMouseMove)
-		}
-	})
+type AppState = { loading: true } | { loading: false; result: string }
 
-	return (
-		<div>
-			<h1>Hello World</h1>
-			<div style={{ width: x, height: y, background: "black" }} />
-		</div>
-	)
+export class App extends React.Component<{}, AppState> {
+	state: AppState = { loading: true }
+	async componentDidMount() {
+		const response = await fetch("/api/hello")
+		const { result } = await response.json()
+		this.setState({ result, loading: false })
+	}
+	render() {
+		return (
+			<div>
+				Hello{" "}
+				<strong>{this.state.loading ? "(loading)" : this.state.result}</strong>
+			</div>
+		)
+	}
 }

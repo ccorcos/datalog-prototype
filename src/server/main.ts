@@ -5,8 +5,8 @@ const app = express()
 
 app.use(morgan("dev"))
 
-app.get("/", (req, res) => {
-	res.send("Hello World")
+app.get("/api/hello", (req, res) => {
+	res.json({ result: "World!!" })
 })
 
 app.listen(8081, () => {
