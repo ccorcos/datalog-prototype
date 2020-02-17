@@ -16,25 +16,25 @@ export type DatabaseIndex<T extends Array<DatabaseValue>> = {
 	values: Array<T>
 }
 
-type Tuple3 = [DatabaseValue, DatabaseValue, DatabaseValue]
+export type DatabaseValue3 = [DatabaseValue, DatabaseValue, DatabaseValue]
 
-const eav: DatabaseIndex<Tuple3> = {
+const eav: DatabaseIndex<DatabaseValue3> = {
 	sort: [1, 1, 1],
 	values: [],
 }
-const ave: DatabaseIndex<Tuple3> = {
+const ave: DatabaseIndex<DatabaseValue3> = {
 	sort: [1, 1, 1],
 	values: [],
 }
-const aev: DatabaseIndex<Tuple3> = {
+const aev: DatabaseIndex<DatabaseValue3> = {
 	sort: [1, 1, 1],
 	values: [],
 }
-const vae: DatabaseIndex<Tuple3> = {
+const vae: DatabaseIndex<DatabaseValue3> = {
 	sort: [1, 1, 1],
 	values: [],
 }
-const vea: DatabaseIndex<Tuple3> = {
+const vea: DatabaseIndex<DatabaseValue3> = {
 	sort: [1, 1, 1],
 	values: [],
 }
@@ -53,7 +53,7 @@ export function set(database: Database, fact: Fact) {
 			"e" | "a" | "v",
 			"e" | "a" | "v"
 		]
-		const result = chars.map(char => ({ e, a, v }[char])) as Tuple3
+		const result = chars.map(char => ({ e, a, v }[char])) as DatabaseValue3
 		addToIndex(index, result)
 	}
 }
@@ -66,7 +66,7 @@ export function unset(database: Database, fact: Fact) {
 			"e" | "a" | "v",
 			"e" | "a" | "v"
 		]
-		const result = chars.map(char => ({ e, a, v }[char])) as Tuple3
+		const result = chars.map(char => ({ e, a, v }[char])) as DatabaseValue3
 		removeFromIndex(index, result)
 	}
 }
