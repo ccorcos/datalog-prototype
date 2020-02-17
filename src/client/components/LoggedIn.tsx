@@ -21,8 +21,13 @@ export class LoggedIn extends React.Component<LoggedInProps, LoggedInState> {
 	render() {
 		return (
 			<div>
-				You are logged in as <strong>{this.props.username}</strong>
-				<button onClick={this.props.onLogout}>logout</button>
+				<div>
+					You are logged in as <strong>{this.props.username}</strong>
+					<button onClick={this.props.onLogout}>logout</button>
+				</div>
+				<div>
+					<div>Pages:</div>
+				</div>
 			</div>
 		)
 	}
