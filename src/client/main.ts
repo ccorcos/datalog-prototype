@@ -11,4 +11,4 @@ css.global("a", {
 const root = document.createElement("div")
 document.body.appendChild(root)
 
-ReactDOM.render(<App />, root)
+ReactDOM.render(React.createElement(App), root)

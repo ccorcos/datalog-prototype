@@ -3,7 +3,7 @@ import * as HtmlWebpackPlugin from "html-webpack-plugin"
 import { Configuration } from "webpack"
 
 const config: Configuration = {
-	entry: "./src/index.tsx",
+	entry: "./src/client/main.ts",
 	resolve: {
 		extensions: [".js", ".ts", ".tsx"],
 	},
@@ -14,7 +14,8 @@ const config: Configuration = {
 				exclude: /node_modules/,
 				use: [
 					{
-						loader: "awesome-typescript-loader",
+						loader: "ts-loader",
+						options: { configFile: "tsconfig.client.json" },
 					},
 				],
 			},
@@ -23,13 +24,13 @@ const config: Configuration = {
 	cache: true,
 	devtool: "source-map",
 	output: {
-		path: path.join(__dirname, "dist"),
+		path: path.join(__dirname, "build/client"),
 		filename: "[name]-[chunkhash].js",
 		chunkFilename: "[name]-[chunkhash].js",
 	},
 	plugins: [
 		new HtmlWebpackPlugin({
-			template: path.join(__dirname, "src/index.html"),
+			template: path.join(__dirname, "src/client/index.html"),
 		}),
 	],
 }
