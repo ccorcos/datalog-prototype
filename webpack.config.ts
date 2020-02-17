@@ -40,6 +40,7 @@ Object.assign(config, {
 	devServer: {
 		publicPath: "/",
 		historyApiFallback: true,
+		port: 8080,
 	},
 })
 
