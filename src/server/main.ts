@@ -50,14 +50,14 @@ wss.on("connection", ws => {
 	const thisSocketId = randomId()
 	sockets[thisSocketId] = ws
 
-	const wsSend = (message: Message) => {
+	const send = (ws: WebSocket, message: Message) => {
 		ws.send(JSON.stringify(message))
 	}
 
 	ws.on("message", data => {
 		const message: Message = JSON.parse(data.toString())
 		if (message.type === "transaction") {
-			console.log("-> Transaction")
+			console.log("<- write")
 			transactionQueue.enqueue(async () => {
 				submitTransaction(database, message.transaction)
 				await fs.writeFile(dbPath, JSON.stringify(database), "utf8")
@@ -66,17 +66,19 @@ wss.on("connection", ws => {
 					subscriptions,
 					message.transaction
 				)
-				for (const [socketId, transaction] of Object.entries(broadcast)) {
-					if (socketId === thisSocketId) {
-						continue
-					} else {
+				const entries = Object.entries(broadcast).filter(
+					([socketId]) => socketId !== thisSocketId
+				)
+				if (entries.length) {
+					console.log(" -> broadcast", entries.length)
+					for (const [socketId, transaction] of entries) {
 						const ws = sockets[socketId]
-						wsSend({ type: "transaction", transaction })
+						send(ws, { type: "transaction", transaction })
 					}
 				}
 			})
 		} else if (message.type === "subscribe") {
-			console.log("-> Subscribe")
+			console.log("<- subscribe")
 			// Register the subscription on the client.
 			createSubscription(subscriptions, message.query, thisSocketId)
 			// Evaluate the query, then send all the relevant facts to the client.
@@ -85,7 +87,7 @@ wss.on("connection", ws => {
 				sets: results.facts,
 				unsets: [],
 			}
-			wsSend({ type: "transaction", transaction })
+			send(ws, { type: "transaction", transaction })
 		}
 	})
 
