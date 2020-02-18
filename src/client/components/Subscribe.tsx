@@ -46,7 +46,7 @@ ws.onmessage = x => {
 		console.log("<- broadcast", broadcast)
 		for (const [subscribeId, transaction] of Object.entries(broadcast)) {
 			const component = subscribes[subscribeId]
-			component.forceUpdate()
+			component.update()
 		}
 	}
 }
@@ -59,7 +59,7 @@ export function write(transaction: Transaction) {
 	console.log("-> broadcast", broadcast)
 	for (const [subscribeId, transaction] of Object.entries(broadcast)) {
 		const component = subscribes[subscribeId]
-		component.forceUpdate()
+		component.update()
 	}
 }
 
@@ -69,7 +69,9 @@ type SubscribeProps = {
 	query: Query
 	render: (bindings: Array<Binding>) => React.ReactNode
 }
-type SubscribeState = {}
+type SubscribeState = {
+	bindings: Array<Binding>
+}
 
 export class Subscribe extends React.Component<SubscribeProps, SubscribeState> {
 	state: SubscribeState
@@ -77,7 +79,8 @@ export class Subscribe extends React.Component<SubscribeProps, SubscribeState> {
 
 	constructor(props: SubscribeProps) {
 		super(props)
-		this.state = {}
+		const { bindings } = evaluateQuery(database, this.props.query)
+		this.state = { bindings }
 		this.id = randomId()
 		subscribes[this.id] = this
 		createSubscription(this.props.query, this.id)
@@ -91,9 +94,12 @@ export class Subscribe extends React.Component<SubscribeProps, SubscribeState> {
 		// TODO: unsubscribe from remote..
 	}
 
-	render() {
-		console.log("render")
+	update() {
 		const { bindings } = evaluateQuery(database, this.props.query)
-		return this.props.render(bindings)
+		this.setState({ bindings })
+	}
+
+	render() {
+		return this.props.render(this.state.bindings)
 	}
 }

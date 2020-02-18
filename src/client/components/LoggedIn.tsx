@@ -52,13 +52,15 @@ export class LoggedIn extends React.Component<LoggedInProps, LoggedInState> {
 												<button
 													disabled={i === 0}
 													onClick={() => {
-														const before = bindings[i - 1]
-														const before2 = bindings[i - 2]
-														const newSort = before2
-															? ((before["?sort"] as number) -
-																	(before2["?sort"] as number)) /
-															  2
-															: (before["?sort"] as number) - 1
+														const sorts = bindings.map(
+															binding => binding["?sort"] as number
+														)
+														const before = sorts[i - 1]
+														const before2 = sorts[i - 2]
+														const newSort =
+															before2 == undefined
+																? before - 1
+																: before + (before2 - before) / 2
 														write({
 															type: "transaction",
 															sets: [[binding["?pageId"], "sort", newSort]],
@@ -73,13 +75,17 @@ export class LoggedIn extends React.Component<LoggedInProps, LoggedInState> {
 												<button
 													disabled={i === bindings.length - 1}
 													onClick={() => {
-														const after = bindings[i + 1]
-														const after2 = bindings[i + 2]
-														const newSort = after2
-															? ((after["?sort"] as number) -
-																	(after2["?sort"] as number)) /
-															  2
-															: (after["?sort"] as number) + 1
+														const sorts = bindings.map(
+															binding => binding["?sort"] as number
+														)
+														const after = sorts[i + 1]
+														const after2 = sorts[i + 2]
+														const newSort =
+															after2 == undefined
+																? after + 1
+																: after + (after2 - after) / 2
+
+														console.log("move down", after, after2, newSort)
 														write({
 															type: "transaction",
 															sets: [[binding["?pageId"], "sort", newSort]],
