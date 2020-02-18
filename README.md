@@ -6,6 +6,9 @@ This is a full-stack prototype of collaborate web application backed by a Datalo
 
 TODO
 
+- Simple!
+	- Entire demo: ~1500 LOC
+	- Database logic: ~1000 LOC
 - Simple information model. Schemaless. No need for migrations.
 - Flexible information model.
 	- Can be used for to build CRDT on top.
