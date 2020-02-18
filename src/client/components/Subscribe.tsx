@@ -29,6 +29,7 @@ import { Message } from "../../shared/protocol"
 
 // A local cache of only the facts relevant to the client.
 const database = createEmptyDatabase()
+const subscriptions = createEmptyDatabase()
 
 const ws = new WebSocket(`ws://localhost:8081/ws`)
 
@@ -46,7 +47,7 @@ ws.onmessage = x => {
 	if (message.type === "transaction") {
 		console.log("<- write", message)
 		submitTransaction(database, message)
-		const broadcast = getTransactionBroadcast(message)
+		const broadcast = getTransactionBroadcast(subscriptions, message)
 		console.log("<- broadcast", broadcast)
 		for (const [subscribeId, transaction] of Object.entries(broadcast)) {
 			const component = subscribes[subscribeId]
@@ -59,7 +60,7 @@ export function write(transaction: Transaction) {
 	console.log("-> write", transaction)
 	submitTransaction(database, transaction)
 	wsSend(transaction)
-	const broadcast = getTransactionBroadcast(transaction)
+	const broadcast = getTransactionBroadcast(subscriptions, transaction)
 	console.log("-> broadcast", broadcast)
 	for (const [subscribeId, transaction] of Object.entries(broadcast)) {
 		const component = subscribes[subscribeId]
@@ -87,13 +88,13 @@ export class Subscribe extends React.Component<SubscribeProps, SubscribeState> {
 		this.state = { bindings }
 		this.id = randomId()
 		subscribes[this.id] = this
-		createSubscription(this.props.query, this.id)
+		createSubscription(subscriptions, this.props.query, this.id)
 		// TODO: better types.
 		wsSend({ type: "subscribe", query: this.props.query })
 	}
 
 	componentWillUnmount() {
-		destroySubscriptions(this.props.query, this.id)
+		destroySubscriptions(subscriptions, this.props.query, this.id)
 		subscribes[this.id]
 		// TODO: unsubscribe from remote..
 	}

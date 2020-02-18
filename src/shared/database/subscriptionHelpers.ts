@@ -6,13 +6,7 @@
 
 */
 
-import {
-	createEmptyDatabase,
-	setFact,
-	unsetFact,
-	Fact,
-	Transaction,
-} from "./eavStore"
+import { setFact, unsetFact, Fact, Transaction, Database } from "./eavStore"
 import {
 	Query,
 	evaluateQuery,
@@ -22,12 +16,14 @@ import {
 import { randomId } from "../helpers/randomId"
 import { DatabaseValue } from "./indexHelpers"
 
-const subscriptions = createEmptyDatabase()
-
 /**
  * Registers the query listeners for a given `subscriptionId`.
  */
-export function createSubscription(query: Query, subscriptionId: string) {
+export function createSubscription(
+	subscriptions: Database,
+	query: Query,
+	subscriptionId: string
+) {
 	// `queryId` is deterministic.
 	const queryId = randomId(JSON.stringify(query))
 
@@ -55,7 +51,11 @@ export function createSubscription(query: Query, subscriptionId: string) {
  * Remove the subscription from for the given query and remove all query listeners
  * if there are no more subscriptions for that query.
  */
-export function destroySubscriptions(query: Query, subscriptionId: string) {
+export function destroySubscriptions(
+	subscriptions: Database,
+	query: Query,
+	subscriptionId: string
+) {
 	// `queryId` is deterministic.
 	const queryId = randomId(JSON.stringify(query))
 
@@ -91,7 +91,7 @@ export function destroySubscriptions(query: Query, subscriptionId: string) {
 /**
  * Determine which subscriptions depend on the given fact.
  */
-function getSubscriptionsToFact(fact: Fact) {
+function getSubscriptionsToFact(subscriptions: Database, fact: Fact) {
 	const listenPatterns = getListenPatternsForFact(fact)
 	const subscriptionIds = new Set<string>()
 	for (const pattern of listenPatterns) {
@@ -118,11 +118,14 @@ export type Broadcast = { [subscriptionId: string]: Transaction }
 /**
  * Logic for broadcasting updates to each subscriber.
  */
-export function getTransactionBroadcast(transaction: Transaction) {
+export function getTransactionBroadcast(
+	subscriptions: Database,
+	transaction: Transaction
+) {
 	// Fan out to all listening queries.
 	const broadcast: Broadcast = {}
 	for (const fact of transaction.sets) {
-		const subscriptionIds = getSubscriptionsToFact(fact)
+		const subscriptionIds = getSubscriptionsToFact(subscriptions, fact)
 		for (const subscriptionId of subscriptionIds) {
 			if (!broadcast[subscriptionId]) {
 				broadcast[subscriptionId] = {
@@ -135,7 +138,7 @@ export function getTransactionBroadcast(transaction: Transaction) {
 		}
 	}
 	for (const fact of transaction.unsets) {
-		const subscriptionIds = getSubscriptionsToFact(fact)
+		const subscriptionIds = getSubscriptionsToFact(subscriptions, fact)
 		for (const subscriptionId of subscriptionIds) {
 			if (!broadcast[subscriptionId]) {
 				broadcast[subscriptionId] = {

@@ -42,6 +42,8 @@ try {
 
 const transactionQueue = new AsyncQueue(1)
 
+const subscriptions = createEmptyDatabase()
+
 const sockets: Record<string, WebSocket> = {}
 
 wss.on("connection", ws => {
@@ -56,7 +58,7 @@ wss.on("connection", ws => {
 				submitTransaction(database, message)
 				await fs.writeFile(dbPath, JSON.stringify(database), "utf8")
 
-				const broadcast = getTransactionBroadcast(message)
+				const broadcast = getTransactionBroadcast(subscriptions, message)
 				for (const [socketId, transaction] of Object.entries(broadcast)) {
 					if (socketId === thisSocketId) {
 						continue
@@ -69,7 +71,7 @@ wss.on("connection", ws => {
 		} else if (message.type === "subscribe") {
 			console.log("-> Subscribe")
 			// Register the subscription on the client.
-			createSubscription(message.query, thisSocketId)
+			createSubscription(subscriptions, message.query, thisSocketId)
 			// Evaluate the query, then send all the relevant facts to the client.
 			const results = evaluateQuery(database, message.query)
 			const transaction: Transaction = {
