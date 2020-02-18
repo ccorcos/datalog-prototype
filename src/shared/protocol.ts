@@ -7,7 +7,7 @@
 */
 
 import { Query } from "./database/queryHelpers"
-import { Transaction } from "./database/eavStore"
+import { Transaction } from "./database/submitTransaction"
 
 export type SubscribeMessage = { type: "subscribe"; query: Query }
 

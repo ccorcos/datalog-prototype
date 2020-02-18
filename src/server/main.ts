@@ -2,18 +2,18 @@ import * as express from "express"
 import * as morgan from "morgan"
 import * as WebSocket from "ws"
 import * as fs from "fs-extra"
+import { createEmptyDatabase } from "../shared/database/eavStore"
 import {
-	createEmptyDatabase,
 	Transaction,
 	submitTransaction,
-} from "../shared/database/eavStore"
+	Broadcast,
+} from "../shared/database/submitTransaction"
 import { AsyncQueue } from "../shared/AsyncQueue"
 import { rootPath } from "../shared/rootPath"
 import { evaluateQuery } from "../shared/database/queryHelpers"
 import { randomId } from "../shared/randomId"
 import {
 	createSubscription,
-	getTransactionBroadcast,
 	destroySubscription,
 	destroyAllSubscriptions,
 } from "../shared/database/subscriptionHelpers"
@@ -73,14 +73,13 @@ wss.on("connection", ws => {
 			console.log("<- write")
 			// Enqueue a transaction to write serially.
 			transactionQueue.enqueue(async () => {
-				submitTransaction(database, message.transaction)
+				const broadcast = submitTransaction({
+					subscriptions,
+					database,
+					transaction: message.transaction,
+				})
 				await fs.writeFile(dbPath, JSON.stringify(database), "utf8")
 
-				// Broadcast to relevant subscriptions.
-				const broadcast = getTransactionBroadcast(
-					subscriptions,
-					message.transaction
-				)
 				const entries = Object.entries(broadcast).filter(
 					([socketId]) => socketId !== thisSocketId
 				)

@@ -6,12 +6,13 @@
 
 */
 
-import { setFact, unsetFact, Fact, Transaction, Database } from "./eavStore"
+import { setFact, unsetFact, Fact, Database } from "./eavStore"
 import {
 	Query,
 	evaluateQuery,
 	Unknown,
 	statementsToClause,
+	Binding,
 } from "./queryHelpers"
 import { randomId } from "../randomId"
 import { DatabaseValue } from "./indexHelpers"
@@ -108,67 +109,88 @@ export function destroyAllSubscriptions(
 	}
 }
 
-/**
- * Determine which subscriptions depend on the given fact.
- */
-function getSubscriptionsToFact(subscriptions: Database, fact: Fact) {
-	const listenPatterns = getListenPatternsForFact(fact)
-	const subscriptionIds = new Set<string>()
-	for (const pattern of listenPatterns) {
-		const { bindings } = evaluateQuery(subscriptions, {
-			statements: [
-				["?listenerId", "pattern", JSON.stringify(pattern)],
-				["?queryId", "listener", "?listenerId"],
-				["?queryId", "subscriptionId", "?subscriptionId"],
-			],
-		})
-		for (const binding of bindings) {
-			subscriptionIds.add(binding.subscriptionId as string)
-		}
-	}
-	return subscriptionIds
+type SubscriptionUpdate = {
+	fact: Fact
+	subscriptionId: string
+	query: Query
+	inverseBinding: InverseBinding
 }
 
 /**
- * A set of transactions to emit to each subscriptionIds in response
- * to a given transaction.
+ * Determine which subscriptions depend on the given fact.
  */
-export type Broadcast = { [subscriptionId: string]: Transaction }
-
-/**
- * Logic for broadcasting updates to each subscriber.
- */
-export function getTransactionBroadcast(
+export function getSubscriptionUpdates(
 	subscriptions: Database,
-	transaction: Transaction
+	facts: Array<Fact>
 ) {
-	// Fan out to all listening queries.
-	const broadcast: Broadcast = {}
-	for (const fact of transaction.sets) {
-		const subscriptionIds = getSubscriptionsToFact(subscriptions, fact)
-		for (const subscriptionId of subscriptionIds) {
-			if (!broadcast[subscriptionId]) {
-				broadcast[subscriptionId] = {
-					sets: [],
-					unsets: [],
-				}
+	const results: Array<SubscriptionUpdate> = []
+	for (const fact of facts) {
+		const listenPatterns = getListenPatternsForFact(fact)
+
+		for (const pattern of listenPatterns) {
+			const { bindings } = evaluateQuery(subscriptions, {
+				statements: [
+					["?queryId", "query", "?query"],
+					["?queryId", "subscriptionId", "?subscriptionId"],
+					["?queryId", "listener", "?listenerId"],
+					["?listenerId", "pattern", JSON.stringify(pattern)],
+					["?listenerId", "inverseBinding", "?inverseBinding"],
+				],
+			})
+			for (const result of bindings) {
+				const subscriptionId = result.subscriptionId as string
+				const query: Query = JSON.parse(result.query as string)
+				const inverseBinding: InverseBinding = JSON.parse(
+					result.inverseBinding as string
+				)
+				results.push({ subscriptionId, query, inverseBinding, fact })
 			}
-			broadcast[subscriptionId].sets.push(fact)
 		}
 	}
-	for (const fact of transaction.unsets) {
-		const subscriptionIds = getSubscriptionsToFact(subscriptions, fact)
-		for (const subscriptionId of subscriptionIds) {
-			if (!broadcast[subscriptionId]) {
-				broadcast[subscriptionId] = {
-					sets: [],
-					unsets: [],
-				}
+	return results
+}
+
+export function evaluateSubscriptionUpdates(
+	database: Database,
+	updates: Array<SubscriptionUpdate>
+) {
+	// TODO: create an efficient `Map<string, Set<Fact>>` abstraction.
+	const results: Array<{ subscriptionId: string; facts: Array<Fact> }> = []
+
+	for (const { inverseBinding, fact, query, subscriptionId } of updates) {
+		// Figure out what unknowns to resolve inside the query.
+		const resolveBindings: Binding = {}
+		for (let i = 0; i < inverseBinding.length; i++) {
+			const unknown = inverseBinding[i]
+			if (unknown !== null) {
+				resolveBindings[unknown.name] = fact[i]
 			}
-			broadcast[subscriptionId].unsets.push(fact)
+		}
+
+		// Replace the unknowns in the Query to effectively solve for the inverse.
+		const inverseQuery: Query = {
+			statements: query.statements.map(statement => {
+				return statement.map(token => {
+					if (typeof token !== "string") {
+						return token
+					}
+					if (token.startsWith("?")) {
+						const unknownName = token.slice(1)
+						if (unknownName in resolveBindings) {
+							return resolveBindings[unknownName]
+						}
+					}
+					return token
+				}) as Fact
+			}),
+		}
+
+		const { facts } = evaluateQuery(database, inverseQuery)
+		if (facts.length) {
+			results.push({ subscriptionId, facts })
 		}
 	}
-	return broadcast
+	return results
 }
 
 export type ListenPattern = Array<DatabaseValue | null>

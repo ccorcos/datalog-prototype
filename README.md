@@ -8,9 +8,8 @@ This is a full-stack prototype of collaborate web application backed by a Datalo
 
 ## TODO
 
-- refactor main server
-- more complicated query -> subscribe updates needs to re-evaluate.
-- comments on client code.
+- better unset broadcast logic.
+
 - explain how it works
 - also explain why its useful.
 - better merge conflict CRDT logic.

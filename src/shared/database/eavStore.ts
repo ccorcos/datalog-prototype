@@ -79,24 +79,3 @@ export function unsetFact(database: Database, fact: Fact) {
 		removeFromIndex(index, value)
 	}
 }
-
-export type Transaction = {
-	sets: Array<Fact>
-	unsets: Array<Fact>
-}
-
-/**
- * Save a set of transactions in batch.
- */
-export function submitTransaction(
-	database: Database,
-	transaction: Transaction
-) {
-	const { sets, unsets } = transaction
-	for (const fact of sets) {
-		setFact(database, fact)
-	}
-	for (const fact of unsets) {
-		unsetFact(database, fact)
-	}
-}

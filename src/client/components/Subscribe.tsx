@@ -7,15 +7,14 @@
 import * as _ from "lodash"
 import * as React from "react"
 import { randomId } from "../../shared/randomId"
+import { createEmptyDatabase } from "../../shared/database/eavStore"
 import {
-	createEmptyDatabase,
-	submitTransaction,
 	Transaction,
-} from "../../shared/database/eavStore"
+	submitTransaction,
+} from "../../shared/database/submitTransaction"
 import {
 	destroySubscription,
 	createSubscription,
-	getTransactionBroadcast,
 } from "../../shared/database/subscriptionHelpers"
 import {
 	Query,
@@ -48,11 +47,11 @@ ws.onmessage = x => {
 	const message: TransactionMessage = JSON.parse(x.data)
 	if (message.type === "transaction") {
 		console.log("<- write", message.transaction)
-		submitTransaction(database, message.transaction)
-		const broadcast = getTransactionBroadcast(
+		const broadcast = submitTransaction({
 			subscriptions,
-			message.transaction
-		)
+			database,
+			transaction: message.transaction,
+		})
 		console.log("<- broadcast", Object.keys(broadcast).length)
 		for (const subscribeId of Object.keys(broadcast)) {
 			const component = subscribeComponents[subscribeId]
@@ -67,9 +66,12 @@ ws.onmessage = x => {
  */
 export function write(transaction: Transaction) {
 	console.log(" -> write", transaction)
-	submitTransaction(database, transaction)
+	const broadcast = submitTransaction({
+		subscriptions,
+		database,
+		transaction,
+	})
 	wsSend({ type: "transaction", transaction })
-	const broadcast = getTransactionBroadcast(subscriptions, transaction)
 	console.log(" -> broadcast", Object.keys(broadcast).length)
 	for (const subscribeId of Object.keys(broadcast)) {
 		const component = subscribeComponents[subscribeId]
