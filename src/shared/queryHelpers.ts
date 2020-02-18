@@ -1,7 +1,7 @@
 import * as _ from "lodash"
-import { MAX, MIN, compare } from "./compare"
-import { Database, DatabaseValue, Fact } from "./database"
-import { scanIndex } from "./indexHelpers"
+import { MAX, MIN, compare } from "./database/compare"
+import { Database, Fact } from "./database"
+import { scanIndex, DatabaseValue } from "./database/indexHelpers"
 
 /*
 query = {

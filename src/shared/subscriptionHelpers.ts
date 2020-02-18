@@ -5,7 +5,7 @@ import {
 	evaluateQuery,
 	getListenPatternsForFact,
 } from "./queryHelpers"
-import { randomId } from "./randomId"
+import { randomId } from "./helpers/randomId"
 
 const subscriptions = emptyDatabase()
 

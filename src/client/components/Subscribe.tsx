@@ -12,7 +12,7 @@ import {
 	broadcastTransaction,
 } from "../../shared/databaseApi"
 import { Transaction } from "../../shared/protocol"
-import { randomId } from "../../shared/randomId"
+import { randomId } from "../../shared/helpers/randomId"
 import {
 	destroySubscriptions,
 	createSubscription,

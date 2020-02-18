@@ -1,13 +1,27 @@
-import { SortDirections, DatabaseValue } from "./database"
+/*
+
+	Compare.
+
+	Utilities for comparing tuples.
+
+*/
+
+import { SortDirections, DatabaseValue } from "./indexHelpers"
 
 // MIN and MAX are useful for querying ranges.
 export const MIN = Symbol("min")
 export const MAX = Symbol("max")
 
+// When querying ranges, we might not want to have upper or lower bounds.
+// Thus, we can use MIN and MAX for that.
 export type QueryValue = DatabaseValue | typeof MIN | typeof MAX
 
-// string > number > boolean
-function compareValue(a: QueryValue, b: QueryValue) {
+/**
+ * Compare two query values and return a number, similar to `Array.sort`.
+ * When values are not of the same type, the sort order is defined by:
+ * `MAX > string > number > boolean > MIN`.
+ */
+function compareQueryValue(a: QueryValue, b: QueryValue) {
 	if (a === MAX) {
 		if (b === MAX) {
 			return 0
@@ -67,6 +81,10 @@ function compareValue(a: QueryValue, b: QueryValue) {
 	}
 }
 
+/**
+ * Compare two tuples of the same length with varying sort directions.
+ * This is used for generating composite indexes, similar to SQL.
+ */
 export function compare<T extends Array<QueryValue>>(
 	directions: SortDirections<T>
 ) {
@@ -76,7 +94,7 @@ export function compare<T extends Array<QueryValue>>(
 		}
 		for (let i = 0; i < directions.length; i++) {
 			const direction = directions[i]
-			const result = compareValue(a[i], b[i]) * direction
+			const result = compareQueryValue(a[i], b[i]) * direction
 			if (result !== 0) {
 				return result
 			}

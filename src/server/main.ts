@@ -5,10 +5,10 @@ import * as fs from "fs-extra"
 import { Subscribe, Transaction } from "../shared/protocol"
 import { emptyDatabase } from "../shared/database"
 import { submitTransaction, broadcastTransaction } from "../shared/databaseApi"
-import { AsyncQueue } from "../shared/AsyncQueue"
-import { rootPath } from "../shared/rootPath"
+import { AsyncQueue } from "../shared/helpers/AsyncQueue"
+import { rootPath } from "../shared/helpers/rootPath"
 import { evaluateQuery, Query } from "../shared/queryHelpers"
-import { randomId } from "../shared/randomId"
+import { randomId } from "../shared/helpers/randomId"
 import { createSubscription } from "../shared/subscriptionHelpers"
 
 const app = express()

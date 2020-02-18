@@ -4,17 +4,12 @@
 
 */
 
-import { addToIndex, removeFromIndex } from "./indexHelpers"
-
-export type SortDirections<T extends Array<any>> = {
-	[K in keyof T]: 1 | -1
-}
-export type DatabaseValue = string | number | boolean
-
-export type DatabaseIndex<T extends Array<DatabaseValue>> = {
-	sort: SortDirections<T>
-	values: Array<T>
-}
+import {
+	addToIndex,
+	removeFromIndex,
+	DatabaseValue,
+	DatabaseIndex,
+} from "./database/indexHelpers"
 
 export type Fact = [DatabaseValue, DatabaseValue, DatabaseValue]
 
