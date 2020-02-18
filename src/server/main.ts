@@ -9,13 +9,13 @@ import {
 } from "../shared/database/eavStore"
 import { AsyncQueue } from "../shared/helpers/AsyncQueue"
 import { rootPath } from "../shared/helpers/rootPath"
-import { evaluateQuery, Query } from "../shared/database/queryHelpers"
+import { evaluateQuery } from "../shared/database/queryHelpers"
 import { randomId } from "../shared/helpers/randomId"
 import {
 	createSubscription,
 	getTransactionBroadcast,
 } from "../shared/database/subscriptionHelpers"
-import { Subscribe, Message } from "../shared/protocol"
+import { Message } from "../shared/protocol"
 
 const app = express()
 
@@ -50,21 +50,28 @@ wss.on("connection", ws => {
 	const thisSocketId = randomId()
 	sockets[thisSocketId] = ws
 
+	const wsSend = (message: Message) => {
+		ws.send(JSON.stringify(message))
+	}
+
 	ws.on("message", data => {
 		const message: Message = JSON.parse(data.toString())
 		if (message.type === "transaction") {
 			console.log("-> Transaction")
 			transactionQueue.enqueue(async () => {
-				submitTransaction(database, message)
+				submitTransaction(database, message.transaction)
 				await fs.writeFile(dbPath, JSON.stringify(database), "utf8")
 
-				const broadcast = getTransactionBroadcast(subscriptions, message)
+				const broadcast = getTransactionBroadcast(
+					subscriptions,
+					message.transaction
+				)
 				for (const [socketId, transaction] of Object.entries(broadcast)) {
 					if (socketId === thisSocketId) {
 						continue
 					} else {
 						const ws = sockets[socketId]
-						ws.send(JSON.stringify(transaction))
+						wsSend({ type: "transaction", transaction })
 					}
 				}
 			})
@@ -75,11 +82,10 @@ wss.on("connection", ws => {
 			// Evaluate the query, then send all the relevant facts to the client.
 			const results = evaluateQuery(database, message.query)
 			const transaction: Transaction = {
-				type: "transaction",
 				sets: results.facts,
 				unsets: [],
 			}
-			ws.send(JSON.stringify(transaction))
+			wsSend({ type: "transaction", transaction })
 		}
 	})
 

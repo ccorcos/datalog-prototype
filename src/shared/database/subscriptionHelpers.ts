@@ -129,7 +129,6 @@ export function getTransactionBroadcast(
 		for (const subscriptionId of subscriptionIds) {
 			if (!broadcast[subscriptionId]) {
 				broadcast[subscriptionId] = {
-					type: "transaction",
 					sets: [],
 					unsets: [],
 				}
@@ -142,7 +141,6 @@ export function getTransactionBroadcast(
 		for (const subscriptionId of subscriptionIds) {
 			if (!broadcast[subscriptionId]) {
 				broadcast[subscriptionId] = {
-					type: "transaction",
 					sets: [],
 					unsets: [],
 				}

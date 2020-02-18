@@ -53,7 +53,6 @@ export class PageList extends React.Component<PageListProps, PageListState> {
 											owner={owner}
 											onChangeTitle={newTitle => {
 												write({
-													type: "transaction",
 													sets: [[pageId, "title", newTitle]],
 													unsets: [[pageId, "title", title]],
 												})
@@ -70,7 +69,6 @@ export class PageList extends React.Component<PageListProps, PageListState> {
 														? before - 1
 														: before + (before2 - before) / 2
 												write({
-													type: "transaction",
 													sets: [[pageId, "sort", newSort]],
 													unsets: [[pageId, "sort", sort]],
 												})
@@ -87,7 +85,6 @@ export class PageList extends React.Component<PageListProps, PageListState> {
 														? after + 1
 														: after + (after2 - after) / 2
 												write({
-													type: "transaction",
 													sets: [[pageId, "sort", newSort]],
 													unsets: [[pageId, "sort", sort]],
 												})
@@ -103,7 +100,6 @@ export class PageList extends React.Component<PageListProps, PageListState> {
 											sort += bindings[bindings.length - 1].sort as number
 										}
 										write({
-											type: "transaction",
 											sets: [
 												[pageId, "owner", this.props.username],
 												[pageId, "title", "Untitled"],

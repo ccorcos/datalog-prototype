@@ -12,8 +12,8 @@ import * as React from "react"
 import { randomId } from "../../shared/helpers/randomId"
 import {
 	createEmptyDatabase,
-	Transaction,
 	submitTransaction,
+	Transaction,
 } from "../../shared/database/eavStore"
 import {
 	destroySubscriptions,
@@ -25,7 +25,7 @@ import {
 	evaluateQuery,
 	Binding,
 } from "../../shared/database/queryHelpers"
-import { Message } from "../../shared/protocol"
+import { Message, TransactionMessage } from "../../shared/protocol"
 
 // A local cache of only the facts relevant to the client.
 const database = createEmptyDatabase()
@@ -43,11 +43,14 @@ async function wsSend(message: Message) {
 }
 
 ws.onmessage = x => {
-	const message: Transaction = JSON.parse(x.data)
+	const message: TransactionMessage = JSON.parse(x.data)
 	if (message.type === "transaction") {
 		console.log("<- write", message)
-		submitTransaction(database, message)
-		const broadcast = getTransactionBroadcast(subscriptions, message)
+		submitTransaction(database, message.transaction)
+		const broadcast = getTransactionBroadcast(
+			subscriptions,
+			message.transaction
+		)
 		console.log("<- broadcast", broadcast)
 		for (const [subscribeId, transaction] of Object.entries(broadcast)) {
 			const component = subscribes[subscribeId]
@@ -59,7 +62,7 @@ ws.onmessage = x => {
 export function write(transaction: Transaction) {
 	console.log("-> write", transaction)
 	submitTransaction(database, transaction)
-	wsSend(transaction)
+	wsSend({ type: "transaction", transaction })
 	const broadcast = getTransactionBroadcast(subscriptions, transaction)
 	console.log("-> broadcast", broadcast)
 	for (const [subscribeId, transaction] of Object.entries(broadcast)) {
@@ -89,7 +92,6 @@ export class Subscribe extends React.Component<SubscribeProps, SubscribeState> {
 		this.id = randomId()
 		subscribes[this.id] = this
 		createSubscription(subscriptions, this.props.query, this.id)
-		// TODO: better types.
 		wsSend({ type: "subscribe", query: this.props.query })
 	}
 

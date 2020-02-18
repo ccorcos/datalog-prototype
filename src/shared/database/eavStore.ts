@@ -81,7 +81,6 @@ export function unsetFact(database: Database, fact: Fact) {
 }
 
 export type Transaction = {
-	type: "transaction"
 	sets: Array<Fact>
 	unsets: Array<Fact>
 }

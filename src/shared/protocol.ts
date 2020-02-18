@@ -9,6 +9,11 @@
 import { Query } from "./database/queryHelpers"
 import { Transaction } from "./database/eavStore"
 
-export type Subscribe = { type: "subscribe"; query: Query }
+export type SubscribeMessage = { type: "subscribe"; query: Query }
 
-export type Message = Subscribe | Transaction
+export type TransactionMessage = {
+	type: "transaction"
+	transaction: Transaction
+}
+
+export type Message = SubscribeMessage | TransactionMessage
