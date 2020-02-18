@@ -35,7 +35,6 @@ export class PageList extends React.Component<PageListProps, PageListState> {
 						],
 						sort: [
 							["?sort", 1],
-							["?title", 1],
 							["?pageId", 1],
 						],
 					}}

@@ -1,6 +1,6 @@
 /*
 
-	EAV Database (simplified).
+	Datalog Database (simplified).
 
 */
 
