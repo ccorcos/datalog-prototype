@@ -155,7 +155,11 @@ export function evaluateSubscriptionUpdates(
 	updates: Array<SubscriptionUpdate>
 ) {
 	// TODO: create an efficient `Map<string, Set<Fact>>` abstraction.
-	const results: Array<{ subscriptionId: string; facts: Array<Fact> }> = []
+	const results: Array<{
+		subscriptionId: string
+		fact: Fact
+		facts: Array<Fact>
+	}> = []
 
 	for (const { inverseBinding, fact, query, subscriptionId } of updates) {
 		// Figure out what unknowns to resolve inside the query.
@@ -187,7 +191,7 @@ export function evaluateSubscriptionUpdates(
 
 		const { facts } = evaluateQuery(database, inverseQuery)
 		if (facts.length) {
-			results.push({ subscriptionId, facts })
+			results.push({ subscriptionId, fact, facts })
 		}
 	}
 	return results

@@ -8,8 +8,10 @@ import * as React from "react"
 
 type PageItemProps = {
 	title: string
-	owner: string
+	owners: Array<string>
 	onChangeTitle: (title: string) => void
+	onRemoveOwner: (owner: string) => void
+	onAddOwner: (owner: string) => void
 	canMoveUp: boolean
 	onMoveUp: () => void
 	canMoveDown: boolean
@@ -43,7 +45,29 @@ export class PageItem extends React.Component<PageItemProps, PageItemState> {
 				>
 					⬇
 				</button>
-				<span>[{this.props.owner}]</span>
+				<span>
+					[
+					{this.props.owners.map(owner => (
+						// TODO: intersperse commas
+
+						<React.Fragment key={owner}>
+							<strong onClick={() => this.props.onRemoveOwner(owner)}>
+								{owner}
+							</strong>{" "}
+						</React.Fragment>
+					))}
+					<button
+						onClick={() => {
+							const newOwner = window.prompt("Owner name:", "")
+							if (newOwner) {
+								this.props.onAddOwner(newOwner)
+							}
+						}}
+					>
+						+
+					</button>
+					]
+				</span>
 			</div>
 		)
 	}

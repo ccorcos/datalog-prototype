@@ -27,7 +27,11 @@ export function submitTransaction(args: {
 	const { sets, unsets } = transaction
 
 	// Figure out the subscription updates for the old values.
-	const unsetUpdates = getSubscriptionUpdates(subscriptions, unsets)
+	const unsetSubscriptionUpdates = getSubscriptionUpdates(subscriptions, unsets)
+	const unsetUpdates = evaluateSubscriptionUpdates(
+		database,
+		unsetSubscriptionUpdates
+	)
 
 	// Execute the writes.
 	for (const fact of sets) {
@@ -38,16 +42,19 @@ export function submitTransaction(args: {
 	}
 
 	// Figure out the subscription updates for the new values.
-	const setUpdates = getSubscriptionUpdates(subscriptions, sets)
+	const setSubscriptionUpdates = getSubscriptionUpdates(subscriptions, sets)
 
 	// Evaluate the query for each subscription with the given fact so that
 	// we can determine any other facts that need to go along with the broadcast.
-	const updates = evaluateSubscriptionUpdates(database, setUpdates)
+	const setUpdates = evaluateSubscriptionUpdates(
+		database,
+		setSubscriptionUpdates
+	)
 
 	// Fan out to all listening queries.
 	const broadcast: Broadcast = {}
 
-	for (const { subscriptionId, facts } of updates) {
+	for (const { subscriptionId, facts } of setUpdates) {
 		if (!broadcast[subscriptionId]) {
 			broadcast[subscriptionId] = {
 				sets: [],
@@ -57,8 +64,8 @@ export function submitTransaction(args: {
 		broadcast[subscriptionId].sets.push(...facts)
 	}
 
-	// Don't evaluate for the unsets because there could be intermediate facts that
-	// are used by other facts.
+	// Don't send all of the facts associated with the unset because other queries might
+	// be using them.
 	// TODO: this leads to a memory leak on the client. What we can evaluate the query
 	// and just check that each fact is not represented in the query via some other means.
 	// This is a good reason to have a lazy evaluate! Then we can early return as soon
