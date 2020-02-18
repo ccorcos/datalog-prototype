@@ -1,12 +1,14 @@
-import { Fact } from "./database"
-import { Query } from "./queryHelpers"
+/*
 
-export type Transaction = {
-	type: "transaction"
-	sets: Array<Fact>
-	unsets: Array<Fact>
-}
+	Protocol.
+
+	A set of types for messages sent over the websocket.
+
+*/
+
+import { Query } from "./database/queryHelpers"
+import { Transaction } from "./database/eavStore"
 
 export type Subscribe = { type: "subscribe"; query: Query }
 
-export type Protocol = Transaction | Subscribe
+export type Message = Subscribe | Transaction

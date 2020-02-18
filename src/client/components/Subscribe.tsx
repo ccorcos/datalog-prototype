@@ -1,40 +1,44 @@
 /*
 
-	Subscribe
+	Subscribe.
+
+	A higher-order component that queries a local-database and subscribes
+	to the server over a websocket.
 
 */
 
 import * as _ from "lodash"
 import * as React from "react"
-import { emptyDatabase } from "../../shared/database"
-import {
-	submitTransaction,
-	broadcastTransaction,
-} from "../../shared/databaseApi"
-import { Transaction } from "../../shared/protocol"
 import { randomId } from "../../shared/helpers/randomId"
+import {
+	createEmptyDatabase,
+	Transaction,
+	submitTransaction,
+} from "../../shared/database/eavStore"
 import {
 	destroySubscriptions,
 	createSubscription,
-} from "../../shared/subscriptionHelpers"
-import { Query, evaluateQuery, Binding } from "../../shared/queryHelpers"
+	getTransactionBroadcast,
+} from "../../shared/database/subscriptionHelpers"
+import {
+	Query,
+	evaluateQuery,
+	Binding,
+} from "../../shared/database/queryHelpers"
+import { Message } from "../../shared/protocol"
 
-// query local database
-// subscribe over websocket to the server.
+// A local cache of only the facts relevant to the client.
+const database = createEmptyDatabase()
 
 const ws = new WebSocket(`ws://localhost:8081/ws`)
 
-const database = emptyDatabase()
-
-const wsPromise = new Promise<WebSocket>(resolve => {
-	ws.onopen = () => {
-		resolve(ws)
-	}
+const ready = new Promise<void>(resolve => {
+	ws.onopen = () => resolve()
 })
 
-async function wsSend(str: string) {
-	const ws = await wsPromise
-	ws.send(str)
+async function wsSend(message: Message) {
+	await ready
+	ws.send(JSON.stringify(message))
 }
 
 ws.onmessage = x => {
@@ -42,7 +46,7 @@ ws.onmessage = x => {
 	if (message.type === "transaction") {
 		console.log("<- write", message)
 		submitTransaction(database, message)
-		const broadcast = broadcastTransaction(message)
+		const broadcast = getTransactionBroadcast(message)
 		console.log("<- broadcast", broadcast)
 		for (const [subscribeId, transaction] of Object.entries(broadcast)) {
 			const component = subscribes[subscribeId]
@@ -54,8 +58,8 @@ ws.onmessage = x => {
 export function write(transaction: Transaction) {
 	console.log("-> write", transaction)
 	submitTransaction(database, transaction)
-	wsSend(JSON.stringify(transaction))
-	const broadcast = broadcastTransaction(transaction)
+	wsSend(transaction)
+	const broadcast = getTransactionBroadcast(transaction)
 	console.log("-> broadcast", broadcast)
 	for (const [subscribeId, transaction] of Object.entries(broadcast)) {
 		const component = subscribes[subscribeId]
@@ -85,7 +89,7 @@ export class Subscribe extends React.Component<SubscribeProps, SubscribeState> {
 		subscribes[this.id] = this
 		createSubscription(this.props.query, this.id)
 		// TODO: better types.
-		wsSend(JSON.stringify({ type: "subscribe", query: this.props.query }))
+		wsSend({ type: "subscribe", query: this.props.query })
 	}
 
 	componentWillUnmount() {

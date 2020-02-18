@@ -2,14 +2,20 @@ import * as express from "express"
 import * as morgan from "morgan"
 import * as WebSocket from "ws"
 import * as fs from "fs-extra"
-import { Subscribe, Transaction } from "../shared/protocol"
-import { emptyDatabase } from "../shared/database"
-import { submitTransaction, broadcastTransaction } from "../shared/databaseApi"
+import {
+	createEmptyDatabase,
+	Transaction,
+	submitTransaction,
+} from "../shared/database/eavStore"
 import { AsyncQueue } from "../shared/helpers/AsyncQueue"
 import { rootPath } from "../shared/helpers/rootPath"
-import { evaluateQuery, Query } from "../shared/queryHelpers"
+import { evaluateQuery, Query } from "../shared/database/queryHelpers"
 import { randomId } from "../shared/helpers/randomId"
-import { createSubscription } from "../shared/subscriptionHelpers"
+import {
+	createSubscription,
+	getTransactionBroadcast,
+} from "../shared/database/subscriptionHelpers"
+import { Subscribe, Message } from "../shared/protocol"
 
 const app = express()
 
@@ -26,7 +32,7 @@ const server = app.listen(8081, () => {
 const wss = new WebSocket.Server({ server, path: "/ws" })
 
 const dbPath = rootPath("database.json")
-let database = emptyDatabase()
+let database = createEmptyDatabase()
 try {
 	database = JSON.parse(fs.readFileSync(dbPath, "utf8"))
 	console.log("Loaded database from disk.")
@@ -43,14 +49,14 @@ wss.on("connection", ws => {
 	sockets[thisSocketId] = ws
 
 	ws.on("message", data => {
-		const message: Subscribe | Transaction = JSON.parse(data.toString())
+		const message: Message = JSON.parse(data.toString())
 		if (message.type === "transaction") {
 			console.log("-> Transaction")
 			transactionQueue.enqueue(async () => {
 				submitTransaction(database, message)
 				await fs.writeFile(dbPath, JSON.stringify(database), "utf8")
 
-				const broadcast = broadcastTransaction(message)
+				const broadcast = getTransactionBroadcast(message)
 				for (const [socketId, transaction] of Object.entries(broadcast)) {
 					if (socketId === thisSocketId) {
 						continue
