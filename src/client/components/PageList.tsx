@@ -52,6 +52,9 @@ export class PageList extends React.Component<PageListProps, PageListState> {
 											title={title}
 											owner={owner}
 											onChangeTitle={newTitle => {
+												// In EAV-land, you need to remove old values when you set new
+												// values because it's possible to have two values at the same
+												// time, unlike SQL.
 												write({
 													sets: [[pageId, "title", newTitle]],
 													unsets: [[pageId, "title", title]],
@@ -59,6 +62,12 @@ export class PageList extends React.Component<PageListProps, PageListState> {
 											}}
 											canMoveUp={i > 0}
 											onMoveUp={() => {
+												// Using fractional indexing to keep track of the order of items.
+												// You can learn more about fractional indexing from this Figma blog post:
+												// https://www.figma.com/blog/how-figmas-multiplayer-technology-works/
+												//
+												// TODO: this fractional indexing scheme does has a limited precision. Do
+												// something more along the lines of the Figma article.
 												const sorts = bindings.map(
 													binding => binding.sort as number
 												)

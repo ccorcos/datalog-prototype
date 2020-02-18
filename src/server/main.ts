@@ -14,23 +14,29 @@ import { randomId } from "../shared/helpers/randomId"
 import {
 	createSubscription,
 	getTransactionBroadcast,
+	destroySubscription,
+	destroyAllSubscriptions,
 } from "../shared/database/subscriptionHelpers"
 import { Message } from "../shared/protocol"
+import { unreachable } from "../shared/helpers/typeUtils"
 
 const app = express()
-
 app.use(morgan("dev"))
 
+// TODO: REST API.
 app.get("/api/hello", (req, res) => {
 	res.json({ result: "World!!" })
 })
 
+// Start the server.
 const server = app.listen(8081, () => {
 	console.log(`Server is running in http://localhost:8081`)
 })
 
+// Create a websocket server.
 const wss = new WebSocket.Server({ server, path: "/ws" })
 
+// Load the database from disk if it exists.
 const dbPath = rootPath("database.json")
 let database = createEmptyDatabase()
 try {
@@ -40,28 +46,37 @@ try {
 	console.log("Could not load database from disk.")
 }
 
+// Serialize all transactions to make sure that we aren't writing
+// the database.json file more than once at a time.
 const transactionQueue = new AsyncQueue(1)
 
+// Create an in-memory database for managing websocket subscriptions.
 const subscriptions = createEmptyDatabase()
 
-const sockets: Record<string, WebSocket> = {}
+const sockets: { [socketId: string]: WebSocket } = {}
+
+/** A type-safe helper for sending websocket messages */
+function wsSend(ws: WebSocket, message: Message) {
+	ws.send(JSON.stringify(message))
+}
 
 wss.on("connection", ws => {
+	// Keep track of an id for each websocket.
 	const thisSocketId = randomId()
 	sockets[thisSocketId] = ws
 
-	const send = (ws: WebSocket, message: Message) => {
-		ws.send(JSON.stringify(message))
-	}
-
 	ws.on("message", data => {
+		// Handle messages from the client.
 		const message: Message = JSON.parse(data.toString())
+
 		if (message.type === "transaction") {
 			console.log("<- write")
+			// Enqueue a transaction to write serially.
 			transactionQueue.enqueue(async () => {
 				submitTransaction(database, message.transaction)
 				await fs.writeFile(dbPath, JSON.stringify(database), "utf8")
 
+				// Broadcast to relevant subscriptions.
 				const broadcast = getTransactionBroadcast(
 					subscriptions,
 					message.transaction
@@ -73,25 +88,31 @@ wss.on("connection", ws => {
 					console.log(" -> broadcast", entries.length)
 					for (const [socketId, transaction] of entries) {
 						const ws = sockets[socketId]
-						send(ws, { type: "transaction", transaction })
+						wsSend(ws, { type: "transaction", transaction })
 					}
 				}
 			})
 		} else if (message.type === "subscribe") {
 			console.log("<- subscribe")
-			// Register the subscription on the client.
+
+			// Register the subscription for the client.
 			createSubscription(subscriptions, message.query, thisSocketId)
+
 			// Evaluate the query, then send all the relevant facts to the client.
 			const results = evaluateQuery(database, message.query)
 			const transaction: Transaction = {
 				sets: results.facts,
 				unsets: [],
 			}
-			send(ws, { type: "transaction", transaction })
+			wsSend(ws, { type: "transaction", transaction })
+		} else if (message.type === "unsubscribe") {
+			destroySubscription(subscriptions, message.query, thisSocketId)
+		} else {
+			unreachable(message)
 		}
 	})
 
 	ws.on("close", () => {
-		// TODO: destroy subscriptions.
+		destroyAllSubscriptions(subscriptions, thisSocketId)
 	})
 })

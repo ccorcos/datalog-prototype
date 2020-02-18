@@ -51,7 +51,7 @@ export function createSubscription(
  * Remove the subscription from for the given query and remove all query listeners
  * if there are no more subscriptions for that query.
  */
-export function destroySubscriptions(
+export function destroySubscription(
 	subscriptions: Database,
 	query: Query,
 	subscriptionId: string
@@ -85,6 +85,26 @@ export function destroySubscriptions(
 	} else {
 		// Otherwise, just remove the subscriptionId from this query.
 		unsetFact(subscriptions, [queryId, "subscriptionId", subscriptionId])
+	}
+}
+
+/**
+ * Remove all subscriptions for a given subscriptionId.
+ */
+export function destroyAllSubscriptions(
+	subscriptions: Database,
+	subscriptionId: string
+) {
+	// Check if there other subscriptions for this query.
+	const { bindings } = evaluateQuery(subscriptions, {
+		statements: [
+			["?queryId", "subscriptionId", subscriptionId],
+			["?queryId", "query", "?query"],
+		],
+	})
+	for (const binding of bindings) {
+		const query = binding.query as string
+		destroySubscription(subscriptions, JSON.parse(query), subscriptionId)
 	}
 }
 

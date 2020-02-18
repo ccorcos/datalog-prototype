@@ -2,9 +2,6 @@
 
 	Subscribe.
 
-	A higher-order component that queries a local-database and subscribes
-	to the server over a websocket.
-
 */
 
 import * as _ from "lodash"
@@ -16,7 +13,7 @@ import {
 	Transaction,
 } from "../../shared/database/eavStore"
 import {
-	destroySubscriptions,
+	destroySubscription,
 	createSubscription,
 	getTransactionBroadcast,
 } from "../../shared/database/subscriptionHelpers"
@@ -90,24 +87,32 @@ type SubscribeState = {
 	bindings: Array<Binding>
 }
 
+/**
+ * A higher-order component that queries a local-database and subscribes
+ * to the server over a websocket.
+ */
 export class Subscribe extends React.Component<SubscribeProps, SubscribeState> {
 	state: SubscribeState
 	id: string
 
 	constructor(props: SubscribeProps) {
 		super(props)
-		const { bindings } = evaluateQuery(database, this.props.query)
-		this.state = { bindings }
+		// Register this component with the registry and subscribe.
 		this.id = randomId()
 		subscribeComponents[this.id] = this
 		createSubscription(subscriptions, this.props.query, this.id)
+		// Evaluate the query to get the initial state.
+		const { bindings } = evaluateQuery(database, this.props.query)
+		this.state = { bindings }
+		// Create a subscription on the server.
 		wsSend({ type: "subscribe", query: this.props.query })
 	}
 
 	componentWillUnmount() {
-		destroySubscriptions(subscriptions, this.props.query, this.id)
+		// Cleean up subscription locally.
+		destroySubscription(subscriptions, this.props.query, this.id)
 		subscribeComponents[this.id]
-		// TODO: unsubscribe from remote..
+		wsSend({ type: "unsubscribe", query: this.props.query })
 	}
 
 	update() {

@@ -11,9 +11,11 @@ import { Transaction } from "./database/eavStore"
 
 export type SubscribeMessage = { type: "subscribe"; query: Query }
 
+export type UnsubscribeMessage = { type: "unsubscribe"; query: Query }
+
 export type TransactionMessage = {
 	type: "transaction"
 	transaction: Transaction
 }
 
-export type Message = SubscribeMessage | TransactionMessage
+export type Message = SubscribeMessage | UnsubscribeMessage | TransactionMessage

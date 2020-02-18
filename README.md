@@ -8,8 +8,8 @@ This is a full-stack prototype of collaborate web application backed by a Datalo
 
 ## TODO
 
-- refactor websocket into its own file on client
 - refactor main server
+- more complicated query -> subscribe updates needs to re-evaluate.
 - comments on client code.
 - explain how it works
 - also explain why its useful.
