@@ -27,10 +27,7 @@ TODO
 ## TODO
 
 - explain how it works
-
-- permissions for owners
-- better unset broadcast logic.
-
-- Offline sync checkpoints
-
 - What's next.
+
+- better unset broadcast logic.
+- Offline sync checkpoints
