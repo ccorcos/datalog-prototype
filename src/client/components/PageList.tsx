@@ -42,10 +42,10 @@ export class PageList extends React.Component<PageListProps, PageListState> {
 						return (
 							<div>
 								{bindings.map((binding, i) => {
-									const title = binding["?title"] as string
-									const pageId = binding["?pageId"] as string
-									const sort = binding["?sort"] as number
-									const owner = binding["?owner"] as string
+									const title = binding.title as string
+									const pageId = binding.pageId as string
+									const sort = binding.sort as number
+									const owner = binding.owner as string
 									return (
 										<PageItem
 											key={pageId}
@@ -61,7 +61,7 @@ export class PageList extends React.Component<PageListProps, PageListState> {
 											canMoveUp={i > 0}
 											onMoveUp={() => {
 												const sorts = bindings.map(
-													binding => binding["?sort"] as number
+													binding => binding.sort as number
 												)
 												const before = sorts[i - 1]
 												const before2 = sorts[i - 2]
@@ -78,7 +78,7 @@ export class PageList extends React.Component<PageListProps, PageListState> {
 											canMoveDown={i < bindings.length - 1}
 											onMoveDown={() => {
 												const sorts = bindings.map(
-													binding => binding["?sort"] as number
+													binding => binding.sort as number
 												)
 												const after = sorts[i + 1]
 												const after2 = sorts[i + 2]
@@ -100,7 +100,7 @@ export class PageList extends React.Component<PageListProps, PageListState> {
 										const pageId = randomId()
 										let sort = 1
 										if (bindings.length > 0) {
-											sort += bindings[bindings.length - 1]["?sort"] as number
+											sort += bindings[bindings.length - 1].sort as number
 										}
 										write({
 											type: "transaction",

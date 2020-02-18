@@ -8,8 +8,6 @@ This is a full-stack prototype of collaborate web application backed by a Datalo
 
 ## TODO
 
-- comment up the code and refactor more.
-- Fix the `?` thing
 - subscriptions should be a pure thing
 - re-order createSubscription args.
 - separate Transaction from the message

@@ -6,7 +6,7 @@
 	"scripts": {
 		"start": "run-p start-client start-server",
 		"start-client": "webpack-dev-server --content-base build/client",
-		"start-server": "nodemon --watch src/server --exec 'node --inspect=5858 -r ts-node/register' ./src/server/main.ts",
+		"start-server": "nodemon --watch src/server --watch src/shared --exec 'node --inspect=5858 -r ts-node/register' ./src/server/main.ts",
 		"build": "rm -rf dist && webpack -p"
 	},
 	"keywords": [],

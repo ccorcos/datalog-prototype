@@ -66,7 +66,7 @@ export function destroySubscriptions(query: Query, subscriptionId: string) {
 	})
 
 	const subscriptionIds = bindings
-		.map(binding => binding["?subscriptionId"])
+		.map(binding => binding.subscriptionId)
 		.filter(id => id !== subscriptionId)
 
 	if (subscriptionIds.length === 0) {
@@ -103,7 +103,7 @@ function getSubscriptionsToFact(fact: Fact) {
 			],
 		})
 		for (const binding of bindings) {
-			subscriptionIds.add(binding["?subscriptionId"] as string)
+			subscriptionIds.add(binding.subscriptionId as string)
 		}
 	}
 	return subscriptionIds

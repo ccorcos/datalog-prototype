@@ -53,7 +53,7 @@ type Expression = {
 function statementToExpression(statement: Fact): Expression {
 	const [entity, attribute, value] = statement.map(value => {
 		if (typeof value === "string" && value.startsWith("?")) {
-			const unknown: Unknown = { type: "unknown", name: value }
+			const unknown: Unknown = { type: "unknown", name: value.slice(1) }
 			return unknown
 		} else {
 			const known: Known = { type: "known", value }
@@ -319,8 +319,12 @@ export function evaluateQuery(database: Database, query: Query) {
 		const cmp = compare(query.sort.map(([name, direction]) => direction))
 		results.bindings.sort((a, b) => {
 			return cmp(
-				sort.map(([varName]) => a[varName]),
-				sort.map(([varName]) => b[varName])
+				sort.map(
+					([varName]) => a[varName.slice(1)] // remove the leading `?`
+				),
+				sort.map(
+					([varName]) => b[varName.slice(1)] // remove the leading `?`
+				)
 			)
 		})
 	}
