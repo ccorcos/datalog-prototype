@@ -16,7 +16,7 @@ function compareValue(a: QueryValue, b: QueryValue) {
 		}
 	}
 	if (b === MAX) {
-		return 1
+		return -1
 	}
 	if (a === MIN) {
 		if (b === MIN) {
@@ -26,7 +26,7 @@ function compareValue(a: QueryValue, b: QueryValue) {
 		}
 	}
 	if (b === MIN) {
-		return -1
+		return 1
 	}
 	if (typeof a === "string") {
 		if (typeof b === "string") {

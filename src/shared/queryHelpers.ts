@@ -1,6 +1,6 @@
 import * as _ from "lodash"
-import { QueryValue, MAX, MIN, compare } from "./compare"
-import { Database, DatabaseValue, DatabaseValue3 } from "./database"
+import { MAX, MIN, compare } from "./compare"
+import { Database, DatabaseValue, Fact } from "./database"
 import { scanIndex } from "./indexHelpers"
 
 /*
@@ -14,8 +14,8 @@ query = {
 }
 */
 export type Query = {
-	statements: Array<DatabaseValue3>
-	sort: Array<[string, 1 | -1]>
+	statements: Array<Fact>
+	sort?: Array<[string, 1 | -1]>
 }
 
 // Statements are a shorthand where strings that start with a question mark
@@ -29,7 +29,7 @@ type Expression = {
 	value: Known | Unknown
 }
 
-function statementToExpression(statement: DatabaseValue3): Expression {
+function statementToExpression(statement: Fact): Expression {
 	const [entity, attribute, value] = statement.map(value => {
 		if (typeof value === "string" && value.startsWith("?")) {
 			const unknown: Unknown = { type: "unknown", name: value }
@@ -44,106 +44,114 @@ function statementToExpression(statement: DatabaseValue3): Expression {
 
 // A binding is a mapping from unknown variable names in an expression to a
 // value. An Array<Binding> is a set of results for a given statement in a query.
-type Binding = { [name: string]: DatabaseValue }
+export type Binding = { [name: string]: DatabaseValue }
 
 function evaluateExpression(
 	database: Database,
 	expression: Expression
-): Array<Binding> {
+): { bindings: Array<Binding>; facts: Array<Fact> } {
 	const { entity, attribute, value } = expression
 
 	if (entity.type === "known") {
 		if (attribute.type === "known") {
 			if (value.type === "known") {
 				// EAV.
-				const result = scanIndex(database.eav, {
+				const facts = scanIndex(database.eav, {
 					gte: [entity.value, attribute.value, value.value],
 					lte: [entity.value, attribute.value, value.value],
 				})
-				// No bindings.
-				return result.map(() => ({}))
+				// Bind the unknowns.
+				const bindings = facts.map(() => ({}))
+				return { bindings, facts }
 			} else {
 				// EA_
-				const result = scanIndex(database.eav, {
+				const facts = scanIndex(database.eav, {
 					gte: [entity.value, attribute.value, MIN],
 					lte: [entity.value, attribute.value, MAX],
 				})
 				// Bind the unknowns.
-				return result.map(([e, a, v]) => {
+				const bindings = facts.map(([e, a, v]) => {
 					return { [value.name]: v }
 				})
+				return { bindings, facts }
 			}
 		} else {
 			if (value.type === "known") {
 				// E_V
-				const result = scanIndex(database.vea, {
+				const facts = scanIndex(database.vea, {
 					gte: [value.value, entity.value, MIN],
 					lte: [value.value, entity.value, MAX],
 				})
 				// Bind the unknowns.
-				return result.map(([e, a, v]) => {
+				const bindings = facts.map(([v, e, a]) => {
 					return { [attribute.name]: a }
 				})
+				return { bindings, facts }
 			} else {
 				// E__
 				// Warning: this is expensive.
-				const result = scanIndex(database.eav, {
+				const facts = scanIndex(database.eav, {
 					gte: [entity.value, MIN, MIN],
 					lte: [entity.value, MAX, MAX],
 				})
 				// Bind the unknowns.
-				return result.map(([e, a, v]) => {
+				const bindings = facts.map(([e, a, v]) => {
 					return { [attribute.name]: a, [value.name]: v }
 				})
+				return { bindings, facts }
 			}
 		}
 	} else {
 		if (attribute.type === "known") {
 			if (value.type === "known") {
 				// _AV
-				const result = scanIndex(database.ave, {
+				const facts = scanIndex(database.ave, {
 					gte: [attribute.value, value.value, MIN],
 					lte: [attribute.value, value.value, MAX],
 				})
 				// Bind the unknowns.
-				return result.map(([e, a, v]) => {
+				const bindings = facts.map(([a, v, e]) => {
 					return { [entity.name]: e }
 				})
+				return { bindings, facts }
 			} else {
 				// _A_
 				// Warning: this is expensive.
-				const result = scanIndex(database.ave, {
+				const facts = scanIndex(database.ave, {
 					gte: [attribute.value, MIN, MIN],
 					lte: [attribute.value, MAX, MAX],
 				})
 				// Bind the unknowns.
-				return result.map(([e, a, v]) => {
+				const bindings = facts.map(([a, v, e]) => {
 					return { [value.name]: v, [entity.name]: e }
 				})
+				return { bindings, facts }
 			}
 		} else {
 			if (value.type === "known") {
 				// __V
 				// Warning: this is expensive.
-				const result = scanIndex(database.vae, {
+				const facts = scanIndex(database.vae, {
 					gte: [value.value, MIN, MIN],
 					lte: [value.value, MAX, MAX],
 				})
 				// Bind the unknowns.
-				return result.map(([e, a, v]) => {
+				const bindings = facts.map(([v, a, e]) => {
 					return { [attribute.name]: a, [entity.name]: e }
 				})
+				return { bindings, facts }
 			} else {
 				// ___
 				// Warning: this is *very* expensive.
-				const result = scanIndex(database.eav, {
+				const facts = scanIndex(database.eav, {
 					gte: [MIN, MIN, MIN],
 					lte: [MAX, MAX, MAX],
 				})
 				// Bind the unknowns.
-				return result.map(([e, a, v]) => {
+				const bindings = facts.map(([e, a, v]) => {
 					return { [entity.name]: e, [attribute.name]: a, [entity.name]: e }
 				})
+				return { bindings, facts }
 			}
 		}
 	}
@@ -151,7 +159,7 @@ function evaluateExpression(
 
 type Clause = Array<Expression>
 
-function statementsToClause(statements: Array<DatabaseValue3>): Clause {
+function statementsToClause(statements: Array<Fact>): Clause {
 	return statements.map(statementToExpression)
 }
 
@@ -168,9 +176,9 @@ function numberOfUnknowns(expression: Expression) {
 export function evaluateClause(
 	database: Database,
 	clause: Clause
-): Array<Binding> {
+): { bindings: Array<Binding>; facts: Array<Fact> } {
 	if (clause.length === 0) {
-		return []
+		return { bindings: [], facts: [] }
 	}
 
 	// Re-order the expressions with the least unknowns first to reduce the
@@ -178,10 +186,16 @@ export function evaluateClause(
 	clause.sort((a, b) => numberOfUnknowns(a) - numberOfUnknowns(b))
 
 	const [first, ...rest] = clause
-	const bindings = evaluateExpression(database, first)
+	const results = evaluateExpression(database, first)
+
+	if (rest.length === 0) {
+		return results
+	}
+
+	const allFacts = [...results.facts]
 
 	// Otherwise substitute the unknowns
-	const allBindings = bindings
+	const allBindings = results.bindings
 		.map(binding => {
 			// Bind the results of the previous expression to the rest of the clause.
 			const remainingExpressions = rest.map(expression => {
@@ -194,43 +208,106 @@ export function evaluateClause(
 						}
 					}
 				}
-				if (resolved.entity.type === "unknown") {
-					if (resolved.entity.name in binding) {
-						resolved.entity = {
+				if (resolved.attribute.type === "unknown") {
+					if (resolved.attribute.name in binding) {
+						resolved.attribute = {
 							type: "known",
-							value: binding[resolved.entity.name],
+							value: binding[resolved.attribute.name],
 						}
 					}
 				}
-				if (resolved.entity.type === "unknown") {
-					if (resolved.entity.name in binding) {
-						resolved.entity = {
+				if (resolved.value.type === "unknown") {
+					if (resolved.value.name in binding) {
+						resolved.value = {
 							type: "known",
-							value: binding[resolved.entity.name],
+							value: binding[resolved.value.name],
 						}
 					}
 				}
 				return resolved
 			})
 			const remainingResults = evaluateClause(database, remainingExpressions)
-			return remainingResults.map(moreBindings => {
+			allFacts.push(...remainingResults.facts)
+			return remainingResults.bindings.map(moreBindings => {
 				return { ...moreBindings, ...binding }
 			})
 		})
 		.reduce((acc, more) => [...acc, ...more], [])
 
-	return allBindings
+	return { bindings: allBindings, facts: allFacts }
 }
 
 export function evaluateQuery(database: Database, query: Query) {
 	const clause = statementsToClause(query.statements)
 	const results = evaluateClause(database, clause)
-	const cmp = compare(query.sort.map(([name, direction]) => direction))
-	results.sort((a, b) => {
-		return cmp(
-			query.sort.map(([varName]) => a[varName]),
-			query.sort.map(([varName]) => b[varName])
-		)
-	})
+	if (query.sort) {
+		const sort = query.sort
+		const cmp = compare(query.sort.map(([name, direction]) => direction))
+		results.bindings.sort((a, b) => {
+			return cmp(
+				sort.map(([varName]) => a[varName]),
+				sort.map(([varName]) => b[varName])
+			)
+		})
+	}
+
 	return results
+}
+
+export type ListenPattern = Array<DatabaseValue | null>
+export type InverseBinding = Array<Unknown | null>
+export type Listener = {
+	pattern: ListenPattern
+	inverseBinding: InverseBinding
+}
+
+export function getListenersForQuery(query: Query) {
+	const clause = statementsToClause(query.statements)
+	const listeners: Array<Listener> = []
+
+	for (const expression of clause) {
+		const listener: Listener = { pattern: [], inverseBinding: [] }
+		if (expression.entity.type === "known") {
+			listener.pattern.push(expression.entity.value)
+			listener.inverseBinding.push(null)
+		} else {
+			listener.pattern.push(null)
+			listener.inverseBinding.push(expression.entity)
+		}
+
+		if (expression.attribute.type === "known") {
+			listener.pattern.push(expression.attribute.value)
+			listener.inverseBinding.push(null)
+		} else {
+			listener.pattern.push(null)
+			listener.inverseBinding.push(expression.attribute)
+		}
+
+		if (expression.value.type === "known") {
+			listener.pattern.push(expression.value.value)
+			listener.inverseBinding.push(null)
+		} else {
+			listener.pattern.push(null)
+			listener.inverseBinding.push(expression.value)
+		}
+		listeners.push(listener)
+	}
+
+	return listeners
+}
+
+export function getListenPatternsForFact(fact: Fact) {
+	const listenKeys: Array<ListenPattern> = []
+	for (const entity of [true, false]) {
+		for (const attribute of [true, false]) {
+			for (const value of [true, false]) {
+				listenKeys.push([
+					entity ? fact[0] : null,
+					attribute ? fact[1] : null,
+					value ? fact[2] : null,
+				])
+			}
+		}
+	}
+	return listenKeys
 }

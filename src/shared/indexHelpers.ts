@@ -42,26 +42,27 @@ export function scanIndex<T extends Array<DatabaseValue>>(
 ) {
 	const lower = [...(args.gt || args.gte || [])] as QueryTuple<T>
 
-	for (let i = lower.length; i < index.sort.length; i++) {
-		if (args.gt) {
-			lower[i] = MAX
-		} else {
-			lower[i] = MIN
-		}
-	}
+	// for (let i = lower.length; i < index.sort.length; i++) {
+	// 	if (args.gt) {
+	// 		lower[i] = MAX
+	// 	} else {
+	// 		lower[i] = MIN
+	// 	}
+	// }
 
 	const upper = [...(args.lt || args.lte || [])] as QueryTuple<T>
-	for (let i = upper.length; i < index.sort.length; i++) {
-		if (args.lt) {
-			upper[i] = MIN
-		} else {
-			upper[i] = MAX
-		}
-	}
+	// for (let i = upper.length; i < index.sort.length; i++) {
+	// 	if (args.lt) {
+	// 		upper[i] = MIN
+	// 	} else {
+	// 		upper[i] = MAX
+	// 	}
+	// }
 
 	const cmp = compare<QueryTuple<T>>(index.sort)
 
 	if (cmp(lower, upper) > 0) {
+		console.error({ upper, lower })
 		throw new Error("Invalid bounds.")
 	}
 

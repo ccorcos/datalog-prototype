@@ -16,36 +16,34 @@ export type DatabaseIndex<T extends Array<DatabaseValue>> = {
 	values: Array<T>
 }
 
-export type DatabaseValue3 = [DatabaseValue, DatabaseValue, DatabaseValue]
+export type Fact = [DatabaseValue, DatabaseValue, DatabaseValue]
 
-const eav: DatabaseIndex<DatabaseValue3> = {
+const eav: DatabaseIndex<Fact> = {
 	sort: [1, 1, 1],
 	values: [],
 }
-const ave: DatabaseIndex<DatabaseValue3> = {
+const ave: DatabaseIndex<Fact> = {
 	sort: [1, 1, 1],
 	values: [],
 }
-const aev: DatabaseIndex<DatabaseValue3> = {
+const aev: DatabaseIndex<Fact> = {
 	sort: [1, 1, 1],
 	values: [],
 }
-const vae: DatabaseIndex<DatabaseValue3> = {
+const vae: DatabaseIndex<Fact> = {
 	sort: [1, 1, 1],
 	values: [],
 }
-const vea: DatabaseIndex<DatabaseValue3> = {
+const vea: DatabaseIndex<Fact> = {
 	sort: [1, 1, 1],
 	values: [],
 }
 
-export const database = { eav, ave, aev, vae, vea }
+export const emptyDatabase = () => ({ eav, ave, aev, vae, vea })
 
-export type Database = typeof database
+export type Database = ReturnType<typeof emptyDatabase>
 
-export type Fact = [string, string, DatabaseValue]
-
-export function set(database: Database, fact: Fact) {
+export function setFact(database: Database, fact: Fact) {
 	const [e, a, v] = fact
 	for (const [name, index] of Object.entries(database)) {
 		const chars = name.split("") as [
@@ -53,12 +51,12 @@ export function set(database: Database, fact: Fact) {
 			"e" | "a" | "v",
 			"e" | "a" | "v"
 		]
-		const result = chars.map(char => ({ e, a, v }[char])) as DatabaseValue3
+		const result = chars.map(char => ({ e, a, v }[char])) as Fact
 		addToIndex(index, result)
 	}
 }
 
-export function unset(database: Database, fact: Fact) {
+export function unsetFact(database: Database, fact: Fact) {
 	const [e, a, v] = fact
 	for (const [name, index] of Object.entries(database)) {
 		const chars = name.split("") as [
@@ -66,7 +64,7 @@ export function unset(database: Database, fact: Fact) {
 			"e" | "a" | "v",
 			"e" | "a" | "v"
 		]
-		const result = chars.map(char => ({ e, a, v }[char])) as DatabaseValue3
+		const result = chars.map(char => ({ e, a, v }[char])) as Fact
 		removeFromIndex(index, result)
 	}
 }
