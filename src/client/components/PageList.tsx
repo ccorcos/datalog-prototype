@@ -6,7 +6,7 @@
 
 import * as React from "react"
 import { Subscribe, write } from "./Subscribe"
-import { randomId } from "../../shared/helpers/randomId"
+import { randomId } from "../../shared/randomId"
 import { PageItem } from "./PageItem"
 
 type PageListProps = {

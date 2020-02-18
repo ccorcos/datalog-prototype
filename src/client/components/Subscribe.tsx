@@ -6,7 +6,7 @@
 
 import * as _ from "lodash"
 import * as React from "react"
-import { randomId } from "../../shared/helpers/randomId"
+import { randomId } from "../../shared/randomId"
 import {
 	createEmptyDatabase,
 	submitTransaction,

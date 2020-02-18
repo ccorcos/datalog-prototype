@@ -7,10 +7,10 @@ import {
 	Transaction,
 	submitTransaction,
 } from "../shared/database/eavStore"
-import { AsyncQueue } from "../shared/helpers/AsyncQueue"
-import { rootPath } from "../shared/helpers/rootPath"
+import { AsyncQueue } from "../shared/AsyncQueue"
+import { rootPath } from "../shared/rootPath"
 import { evaluateQuery } from "../shared/database/queryHelpers"
-import { randomId } from "../shared/helpers/randomId"
+import { randomId } from "../shared/randomId"
 import {
 	createSubscription,
 	getTransactionBroadcast,
@@ -18,7 +18,7 @@ import {
 	destroyAllSubscriptions,
 } from "../shared/database/subscriptionHelpers"
 import { Message } from "../shared/protocol"
-import { unreachable } from "../shared/helpers/typeUtils"
+import { unreachable } from "../shared/typeUtils"
 
 const app = express()
 app.use(morgan("dev"))

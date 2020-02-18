@@ -13,7 +13,7 @@ import {
 	Unknown,
 	statementsToClause,
 } from "./queryHelpers"
-import { randomId } from "../helpers/randomId"
+import { randomId } from "../randomId"
 import { DatabaseValue } from "./indexHelpers"
 
 /**

@@ -7,7 +7,7 @@
 
 */
 
-import { binarySearch } from "../helpers/binarySearch"
+import { binarySearch } from "../binarySearch"
 import { compare, MIN, MAX } from "./compare"
 
 /**
