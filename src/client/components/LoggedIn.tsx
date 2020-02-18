@@ -68,7 +68,7 @@ export class LoggedIn extends React.Component<LoggedInProps, LoggedInState> {
 														})
 													}}
 												>
-													up
+													move up
 												</button>
 												<button
 													disabled={i === bindings.length - 1}
@@ -89,7 +89,7 @@ export class LoggedIn extends React.Component<LoggedInProps, LoggedInState> {
 														})
 													}}
 												>
-													down
+													move down
 												</button>
 											</div>
 										)
@@ -99,7 +99,7 @@ export class LoggedIn extends React.Component<LoggedInProps, LoggedInState> {
 											const pageId = randomId()
 											let sort = 1
 											if (bindings.length > 0) {
-												sort = bindings[bindings.length - 1]["?sort"] as number
+												sort += bindings[bindings.length - 1]["?sort"] as number
 											}
 											write({
 												type: "transaction",

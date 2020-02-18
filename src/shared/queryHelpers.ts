@@ -56,20 +56,22 @@ function evaluateExpression(
 		if (attribute.type === "known") {
 			if (value.type === "known") {
 				// EAV.
-				const facts = scanIndex(database.eav, {
+				const results = scanIndex(database.eav, {
 					gte: [entity.value, attribute.value, value.value],
 					lte: [entity.value, attribute.value, value.value],
 				})
 				// Bind the unknowns.
-				const bindings = facts.map(() => ({}))
+				const facts = results
+				const bindings = results.map(() => ({}))
 				return { bindings, facts }
 			} else {
 				// EA_
-				const facts = scanIndex(database.eav, {
+				const results = scanIndex(database.eav, {
 					gte: [entity.value, attribute.value, MIN],
 					lte: [entity.value, attribute.value, MAX],
 				})
 				// Bind the unknowns.
+				const facts = results
 				const bindings = facts.map(([e, a, v]) => {
 					return { [value.name]: v }
 				})
@@ -78,22 +80,24 @@ function evaluateExpression(
 		} else {
 			if (value.type === "known") {
 				// E_V
-				const facts = scanIndex(database.vea, {
+				const results = scanIndex(database.vea, {
 					gte: [value.value, entity.value, MIN],
 					lte: [value.value, entity.value, MAX],
 				})
+				const facts = results.map(([v, e, a]) => [e, a, v] as Fact)
 				// Bind the unknowns.
-				const bindings = facts.map(([v, e, a]) => {
+				const bindings = facts.map(([e, a, v]) => {
 					return { [attribute.name]: a }
 				})
 				return { bindings, facts }
 			} else {
 				// E__
 				// Warning: this is expensive.
-				const facts = scanIndex(database.eav, {
+				const results = scanIndex(database.eav, {
 					gte: [entity.value, MIN, MIN],
 					lte: [entity.value, MAX, MAX],
 				})
+				const facts = results
 				// Bind the unknowns.
 				const bindings = facts.map(([e, a, v]) => {
 					return { [attribute.name]: a, [value.name]: v }
@@ -105,24 +109,26 @@ function evaluateExpression(
 		if (attribute.type === "known") {
 			if (value.type === "known") {
 				// _AV
-				const facts = scanIndex(database.ave, {
+				const results = scanIndex(database.ave, {
 					gte: [attribute.value, value.value, MIN],
 					lte: [attribute.value, value.value, MAX],
 				})
+				const facts = results.map(([a, v, e]) => [e, a, v] as Fact)
 				// Bind the unknowns.
-				const bindings = facts.map(([a, v, e]) => {
+				const bindings = facts.map(([e, a, v]) => {
 					return { [entity.name]: e }
 				})
 				return { bindings, facts }
 			} else {
 				// _A_
 				// Warning: this is expensive.
-				const facts = scanIndex(database.ave, {
+				const results = scanIndex(database.ave, {
 					gte: [attribute.value, MIN, MIN],
 					lte: [attribute.value, MAX, MAX],
 				})
+				const facts = results.map(([a, v, e]) => [e, a, v] as Fact)
 				// Bind the unknowns.
-				const bindings = facts.map(([a, v, e]) => {
+				const bindings = facts.map(([e, a, v]) => {
 					return { [value.name]: v, [entity.name]: e }
 				})
 				return { bindings, facts }
@@ -131,22 +137,24 @@ function evaluateExpression(
 			if (value.type === "known") {
 				// __V
 				// Warning: this is expensive.
-				const facts = scanIndex(database.vae, {
+				const results = scanIndex(database.vae, {
 					gte: [value.value, MIN, MIN],
 					lte: [value.value, MAX, MAX],
 				})
+				const facts = results.map(([v, a, e]) => [e, a, v] as Fact)
 				// Bind the unknowns.
-				const bindings = facts.map(([v, a, e]) => {
+				const bindings = facts.map(([e, a, v]) => {
 					return { [attribute.name]: a, [entity.name]: e }
 				})
 				return { bindings, facts }
 			} else {
 				// ___
 				// Warning: this is *very* expensive.
-				const facts = scanIndex(database.eav, {
+				const results = scanIndex(database.eav, {
 					gte: [MIN, MIN, MIN],
 					lte: [MAX, MAX, MAX],
 				})
+				const facts = results
 				// Bind the unknowns.
 				const bindings = facts.map(([e, a, v]) => {
 					return { [entity.name]: e, [attribute.name]: a, [entity.name]: e }
