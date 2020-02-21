@@ -17,9 +17,13 @@ import { Table } from "./Table"
 import { List } from "./List"
 
 type AppProps = {}
-type AppState =
-	| { loggedIn: false }
-	| { loggedIn: true; username: string; route: "outliner" | "table" | "list" }
+type AppState = { loggedIn: false } | LoggedInState
+
+type LoggedInState = {
+	loggedIn: true
+	username: string
+	route: "outliner" | "table" | "list"
+}
 
 export class App extends React.Component<AppProps, AppState> {
 	state: AppState
@@ -28,7 +32,7 @@ export class App extends React.Component<AppProps, AppState> {
 		super(props)
 		const username = getLoggedInUsername()
 		if (username) {
-			this.state = { loggedIn: true, username, route: "list" }
+			this.state = { loggedIn: true, username, route: "outliner" }
 		} else {
 			this.state = { loggedIn: false }
 		}
@@ -36,27 +40,41 @@ export class App extends React.Component<AppProps, AppState> {
 
 	render() {
 		if (this.state.loggedIn) {
-			if (this.state.route === "table") {
-				return (
-					<LoggedIn username={this.state.username} onLogout={this.handleLogout}>
-						<Table username={this.state.username} />
-					</LoggedIn>
-				)
-			} else if (this.state.route === "list") {
-				return (
-					<LoggedIn username={this.state.username} onLogout={this.handleLogout}>
-						<List username={this.state.username} />
-					</LoggedIn>
-				)
-			} else {
-				return (
-					<LoggedIn username={this.state.username} onLogout={this.handleLogout}>
-						<PageList username={this.state.username} />
-					</LoggedIn>
-				)
-			}
+			return (
+				<LoggedIn username={this.state.username} onLogout={this.handleLogout}>
+					<button
+						disabled={this.state.route === "outliner"}
+						onClick={() => this.setState({ ...this.state, route: "outliner" })}
+					>
+						outliner
+					</button>
+					<button
+						disabled={this.state.route === "list"}
+						onClick={() => this.setState({ ...this.state, route: "list" })}
+					>
+						list
+					</button>
+					<button
+						disabled={this.state.route === "table"}
+						onClick={() => this.setState({ ...this.state, route: "table" })}
+					>
+						table
+					</button>
+					{this.renderRoute(this.state)}
+				</LoggedIn>
+			)
 		} else {
 			return <Login onLogin={this.handleLogin} />
+		}
+	}
+
+	renderRoute(state: LoggedInState) {
+		if (state.route === "table") {
+			return <Table username={state.username} />
+		} else if (state.route === "list") {
+			return <List username={state.username} />
+		} else {
+			return <PageList username={state.username} />
 		}
 	}
 

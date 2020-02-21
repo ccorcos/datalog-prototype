@@ -104,7 +104,7 @@ export function scanIndex<T extends Array<DatabaseValue>>(
 		result.found !== undefined
 			? args.gte
 				? result.found
-				: result.found + 1
+				: result.found + 1 // Could be more than one!
 			: result.closest
 
 	const results: Array<T> = []

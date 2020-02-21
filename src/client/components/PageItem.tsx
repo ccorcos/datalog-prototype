@@ -32,6 +32,7 @@ export class PageItem extends React.Component<PageItemProps, PageItemState> {
 		return (
 			<div>
 				<input
+					placeholder="title"
 					value={this.props.title}
 					onChange={this.handleChange}
 					style={{ width: "20em" }}

@@ -155,7 +155,7 @@ export class PageList extends React.Component<PageListProps, PageListState> {
 										write({
 											sets: [
 												[pageId, "owner", this.props.username],
-												[pageId, "title", "Untitled"],
+												[pageId, "title", ""],
 												[pageId, "sort", sort],
 											],
 											unsets: [],
