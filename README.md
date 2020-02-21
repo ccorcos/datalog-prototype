@@ -56,3 +56,5 @@ One of the most elegant things about this demo is how these abstractions have be
 
 - Efficient offline sync checkpoints.
 - Better unset broadcast logic.
+
+- Bug with scanIndex prefix searching.
