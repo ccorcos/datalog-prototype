@@ -15,6 +15,10 @@ export function binarySearch<T>(
 		} else if (dir < 0) {
 			max = k - 1
 		} else {
+			if (k > 0 && list[k - 1] === list[k]) {
+				k--
+				continue
+			}
 			return { found: k }
 		}
 	}

@@ -9,18 +9,21 @@ import { write, Subscribe } from "./Subscribe"
 import { randomId } from "../../shared/randomId"
 import { Binding } from "../../shared/database/queryHelpers"
 import { ListAttributes } from "./ListAttributes"
+import { Filter, FilterMenu } from "./FilterMenu"
 
 type ListProps = {
 	username: string
 }
-type ListState = {}
+type ListState = {
+	filters: Array<Filter>
+}
 
 export class List extends React.Component<ListProps, ListState> {
 	state: ListState
 
 	constructor(props: ListProps) {
 		super(props)
-		this.state = {}
+		this.state = { filters: [] }
 	}
 
 	render() {
@@ -28,6 +31,13 @@ export class List extends React.Component<ListProps, ListState> {
 			<div>
 				<h4>Attributes</h4>
 				<ListAttributes />
+
+				<h4>Filters</h4>
+				<FilterMenu
+					filters={this.state.filters}
+					onChangeFilters={filters => this.setState({ filters })}
+				/>
+
 				<h4>Items</h4>
 				<button
 					onClick={() => {
@@ -42,7 +52,20 @@ export class List extends React.Component<ListProps, ListState> {
 				</button>
 				<Subscribe
 					query={{
-						statements: [["?id", "type", "item"]],
+						statements: [
+							["?id", "type", "item"],
+							...this.state.filters
+								.filter(filter => {
+									return filter.id && filter.value
+								})
+								.map(filter => {
+									return ["?id", filter.id, filter.value] as [
+										string,
+										string,
+										string
+									]
+								}),
+						],
 					}}
 					render={results => {
 						const ids = results.map(result => result.id as string)

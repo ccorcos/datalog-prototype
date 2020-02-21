@@ -94,13 +94,21 @@ type SubscribeState = {
  * to the server over a websocket.
  */
 export class Subscribe extends React.Component<SubscribeProps, SubscribeState> {
-	state: SubscribeState
+	state!: SubscribeState
 	id: string
 
 	constructor(props: SubscribeProps) {
 		super(props)
 		// Register this component with the registry and subscribe.
 		this.id = randomId()
+		this.start()
+	}
+
+	componentWillUnmount() {
+		this.cleanup()
+	}
+
+	start() {
 		subscribeComponents[this.id] = this
 		createSubscription(subscriptions, this.props.query, this.id)
 		// Evaluate the query to get the initial state.
@@ -110,11 +118,18 @@ export class Subscribe extends React.Component<SubscribeProps, SubscribeState> {
 		wsSend({ type: "subscribe", query: this.props.query })
 	}
 
-	componentWillUnmount() {
+	cleanup() {
 		// Cleean up subscription locally.
 		destroySubscription(subscriptions, this.props.query, this.id)
 		subscribeComponents[this.id]
 		wsSend({ type: "unsubscribe", query: this.props.query })
+	}
+
+	componentDidUpdate(prevProps: SubscribeProps) {
+		if (!_.isEqual(this.props.query, prevProps.query)) {
+			this.cleanup()
+			this.start()
+		}
 	}
 
 	update() {
