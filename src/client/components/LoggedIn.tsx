@@ -5,7 +5,6 @@
 */
 
 import * as React from "react"
-import { PageList } from "./PageList"
 type LoggedInProps = { username: string; onLogout: () => void }
 
 type LoggedInState = {}
@@ -25,7 +24,7 @@ export class LoggedIn extends React.Component<LoggedInProps, LoggedInState> {
 					You are logged in as <strong>{this.props.username}</strong>
 					<button onClick={this.props.onLogout}>logout</button>
 				</div>
-				<PageList username={this.props.username} />
+				{this.props.children}
 			</div>
 		)
 	}

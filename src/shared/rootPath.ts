@@ -12,6 +12,6 @@ export function rootPath(...paths: Array<string>) {
 	) {
 		return path.join(...paths)
 	}
-	const root = path.resolve(__dirname, "..", "..", "..")
+	const root = path.resolve(__dirname, "..", "..")
 	return path.join(root, ...paths)
 }

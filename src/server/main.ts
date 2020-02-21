@@ -38,6 +38,7 @@ const wss = new WebSocket.Server({ server, path: "/ws" })
 
 // Load the database from disk if it exists.
 const dbPath = rootPath("database.json")
+console.log(dbPath)
 let database = createEmptyDatabase()
 try {
 	database = JSON.parse(fs.readFileSync(dbPath, "utf8"))
