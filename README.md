@@ -58,3 +58,5 @@ One of the most elegant things about this demo is how these abstractions have be
 - Better unset broadcast logic.
 
 - Bug with scanIndex prefix searching.
+
+- Efficient broadcasting -- how efficient?
