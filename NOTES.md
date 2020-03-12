@@ -126,22 +126,45 @@ Binary search is fundamental to pretty much every database and allow for the ret
 
 Most programmers are familiar with `CREATE INDEX` from SQL and know that it uses a binary tree under the hood, but a lot of programmers are unaware of composite indexes. A composite index is a binary tree index on more than one column -- think of it as a secondary column sort. For example `CREATE INDEX name_age ON people (name, age desc)` will create an ordered tree of people based on name and  everyone with the same name will be ordered by oldest-first. This kind of thing is really useful when you have a lot of data and complex queries.
 
-When it comes to evaluating a query...
+When it comes to evaluating a query, we need 3 different indexes on our EAV tuples to efficiently evaluate any single query expression. Here they are:
 
+- `EAV`
 
+	Used for expressions such as `["0eaebc3e", "name", "?name"]` and `["0eaebc3e", "?attr", "?value"]`.
 
-HERE HERE
+	This lets you look up a value for a known id and attribute. For example, you can look up the name of a given entity.
 
+	It also lets you look up all attribute-value pairs for a given entity. For example, you might want to look up all attribute-value pairs for a user to construct a JSON object.
 
+- `AVE`
 
-- AVE, EAV
+	Used for expressions such as `["?id", "email", email]` and `["?id", "email", "?email"]`.
+
+	This let's you look up an entity based on an attribute-value pair. For example, you can look up a user by email.
+
+	It also lets you list all entity-value pairs for a given attribute. For example, you can list all email addresses with corresponding entities.
+
+- `VEA`
+
+	Used for expressions like `["?person", "?relationship", "0eaebc3e"]`.
+
+	This lets you find all inverse-relationships to an entity.
+
 
 How does the query planner work?
-How would EXPLAIN work
+- evaluating a 2-expression query
+- re-ordering expression and optimal evaluation
+
+What is the performance?
+How does EXPLAIN work?
 
 ## Broadcasting
 
 How do reactive updates work?
+- listeners for a query
+- inverse bindings
+- re-evaluation
+
 What is the performance?
 How does EXPLAIN work?
 

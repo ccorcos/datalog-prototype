@@ -26,6 +26,13 @@ import {
 
 export type Fact = [DatabaseValue, DatabaseValue, DatabaseValue]
 
+// Only need three index to query a 3-tuple expression.
+// e
+// ea
+// ev -> ve
+// a
+// av
+// v
 export const createEmptyDatabase = () => {
 	const eav: DatabaseIndex<Fact> = {
 		sort: [1, 1, 1],
@@ -35,19 +42,11 @@ export const createEmptyDatabase = () => {
 		sort: [1, 1, 1],
 		values: [],
 	}
-	const aev: DatabaseIndex<Fact> = {
-		sort: [1, 1, 1],
-		values: [],
-	}
-	const vae: DatabaseIndex<Fact> = {
-		sort: [1, 1, 1],
-		values: [],
-	}
 	const vea: DatabaseIndex<Fact> = {
 		sort: [1, 1, 1],
 		values: [],
 	}
-	return { eav, ave, aev, vae, vea }
+	return { eav, ave, vea }
 }
 
 export type Database = ReturnType<typeof createEmptyDatabase>

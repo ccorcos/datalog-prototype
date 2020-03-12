@@ -169,11 +169,11 @@ function evaluateExpression(
 			if (value.type === "known") {
 				// __V
 				// Warning: this is expensive.
-				const results = scanIndex(database.vae, {
+				const results = scanIndex(database.vea, {
 					gte: [value.value, MIN, MIN],
 					lte: [value.value, MAX, MAX],
 				})
-				const facts = results.map(([v, a, e]) => [e, a, v] as Fact)
+				const facts = results.map(([v, e, a]) => [e, a, v] as Fact)
 				// Bind the unknowns.
 				const bindings = facts.map(([e, a, v]) => {
 					return { [attribute.name]: a, [entity.name]: e }
