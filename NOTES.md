@@ -124,9 +124,9 @@ You might also be wondering what if we wanted the last clause to be `["?sibling"
 
 Binary search is fundamental to pretty much every database and allow for the retreival of information in `O(log n)` time.
 
-Most programmers are familiar with `CREATE INDEX` from SQL and know that it uses a binary tree under the hood, but a lot of programmers are unaware of composite indexes. A composite index is a binary tree index on more than one column -- think of it as a secondary column sort. For example `CREATE INDEX name_age ON people (name, age desc)` will create an ordered tree of people based on name and  everyone with the same name will be ordered by oldest-first. This kind of thing is really useful when you have a lot of data and complex queries.
+Most programmers are familiar with `CREATE INDEX` from SQL and know that it uses a binary tree under the hood, but a lot of programmers are unaware of composite indexes. A composite index is a binary tree index on more than one column. For examplet sort, you might want to list names by last name, then first name, then oldest first. You could do this in SQL with `CREATE INDEX name_age_index ON people (first, last, age desc)`. This kind of thing is really useful when you have a lot of data and complex queries.
 
-When it comes to evaluating a query, we need 3 different indexes on our EAV tuples to efficiently evaluate any single query expression. Here they are:
+When it comes to evaluating a datalog query, we need 3 different composite indexes on our EAV tuples to efficiently evaluate any single query expression:
 
 - `EAV`
 
@@ -150,12 +150,33 @@ When it comes to evaluating a query, we need 3 different indexes on our EAV tupl
 
 	This lets you find all inverse-relationships to an entity.
 
+### Evaluation
 
-How does the query planner work?
-- evaluating a 2-expression query
-- re-ordering expression and optimal evaluation
+Evaluating a query is fairly simple:
+- iterate through each expression
+- determine the index needed to scan to solve for the unknowns
+- for each result, substitute the unknowns for the variables in the rest of the expression and recurse...
 
-What is the performance?
+For example, given the query from above:
+
+```js
+["?id", "role", "engineering"]
+["?id", "name", "?name"]
+```
+
+We solve the first expression, `["?id", "role", "engineering"]`, by scanning the `AVE` index. That gives us a list of ids `Array<{id: string}>`.
+
+Then for the each id, we substitute in the second expression `["?id", "name", "?name"]` and use the `EAV` index to look up the name which leaves us a result of `Array<{id: string, name: string}>`.
+
+### Performance
+
+When considering the performance of a query, the order of evaluation here is important, but also depends on the ontology of data being represented.
+
+A really simple heuristic is to sort expressions by the least number of unknowns to evaluate first. This is almost always the best thing to do, but it entirely depends on the information stored in the database. For example, maybe there are 1M entities with role: engineer, but only 10 entities in the database with a name. There are some things we could do here to improve this heuristic but it's good enough for now.
+
+One thing that's really interesting to me is how the performance of any one query really drills down to the essential complexity of the information ontology. Otherwise, we can guarantee that this query evaluates in polynomial time. If there are three expressions, the big-O performance is the product of the size of each individual expression.
+
+
 How does EXPLAIN work?
 
 ## Broadcasting
