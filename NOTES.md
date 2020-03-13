@@ -170,28 +170,84 @@ Then for the each id, we substitute in the second expression `["?id", "name", "?
 
 ### Performance
 
-When considering the performance of a query, the order of evaluation here is important, but also depends on the ontology of data being represented.
+The order that the expressions are evaluated here is important for performance, but also largely depends on the ontology of data being represented.
 
 A really simple heuristic is to sort expressions by the least number of unknowns to evaluate first. This is almost always the best thing to do, but it entirely depends on the information stored in the database. For example, maybe there are 1M entities with role: engineer, but only 10 entities in the database with a name. There are some things we could do here to improve this heuristic but it's good enough for now.
 
-One thing that's really interesting to me is how the performance of any one query really drills down to the essential complexity of the information ontology. Otherwise, we can guarantee that this query evaluates in polynomial time. If there are three expressions, the big-O performance is the product of the size of each individual expression.
+We can guarantee that this query evaluates in polynomial time - `O(n^z)` where `z` is the number of expressions, and `n` is the size of the largest result set from any single expression. Interestingly, the actual performance of any query drills down to the essential complexity of the underlying information ontology.
 
+## Reactivity
 
-How does EXPLAIN work?
+One elegance of Datalog queries is how easy it is to make them reactive.
 
-## Broadcasting
+Given our query from before:
+
+```js
+["?id", "role", "engineering"]
+["?id", "name", "?name"]
+```
+
+If the fact `["6ed62fe2", "name", "Joe"]` was written to the database, we know that our query might have to update because it matches one of our expressions.
 
 How do reactive updates work?
 - listeners for a query
 - inverse bindings
 - re-evaluation
 
+--- HERE
+
+```js
+["?id", "role", "engineering"] -> [*, "role", "engineering"]
+["?id", "name", "?name"] -> [*, "name", *]
+```
+
+Permute every fact 8 ways
+```js
+["6ed62fe2", "name", "Joe"]
+[*, "name", "Joe"]
+["6ed62fe2", *, "Joe"]
+["6ed62fe2", "name", *]
+[*, *, "Joe"]
+["6ed62fe2", *, *]
+[*, "name", *]
+[*, *, *]
+```
+
+Query database 8 times.
+
+```js
+[*, "name", *] -> ["?id", "name", "?name"]
+```
+
+Bind results `{id: "6ed62fe2", name: "Joe"}`
+
+Compute the rest of the query
+```js
+["6ed62fe2", "role", "engineering"]
+```
+
+If this person's role is engineering, then the query needs to update.
+
+Performance:
+Every time someone updates a name, we need to recompute this query. That's not great if people are updating names all the time. What we could do is separate these queries into two separate expressions mapped on the client. This makes it more like a key-value lookup. The trade-off here is explicit. Key-value means more subscriptions and client-side load. Larger queries means more communication load. Basically, the performance depends again, entirely on the data ontology.
+
 What is the performance?
 How does EXPLAIN work?
 
+Fanout
+
 ### Indexes
 
+We can keep queries warm reactively so it's a fast scan. It's a durable cache. Create listeners and thats our indexes update. Sort order determines tuple layout. Query planner can check for shortcuts.
+
 ### Rules
+
+Listeners that re-write facts. It's possible this can be implemented purely semantically. But bi-directional links wouldn't work that way.
+
+## Client
+
+Same listener thing for the UI.
+
 
 ## Collaboration
 
