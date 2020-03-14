@@ -21,7 +21,7 @@ interface Database {
 
 export function createSQLiteDatabase(dbPath: string): Database {
 	const db = sqlite(dbPath)
-	for (const cmd in bootup) {
+	for (const cmd of bootup) {
 		db.prepare(cmd).run()
 	}
 
@@ -58,7 +58,7 @@ export function createSQLiteDatabase(dbPath: string): Database {
 					if (value.type === "known") {
 						// EAV.
 						const facts: Array<Fact> = eav
-							.get(entity.value, attribute.value, value.value)
+							.all(entity.value, attribute.value, value.value)
 							.map((obj: any) => [obj.entity, obj.attribute, obj.value])
 
 						// Bind the unknowns.
@@ -67,7 +67,7 @@ export function createSQLiteDatabase(dbPath: string): Database {
 					} else {
 						// EA_
 						const facts: Array<Fact> = ea
-							.get(entity.value, attribute.value)
+							.all(entity.value, attribute.value)
 							.map((obj: any) => [obj.entity, obj.attribute, obj.value])
 
 						// Bind the unknowns.
@@ -80,7 +80,7 @@ export function createSQLiteDatabase(dbPath: string): Database {
 					if (value.type === "known") {
 						// E_V
 						const facts: Array<Fact> = ve
-							.get(value.value, entity.value)
+							.all(value.value, entity.value)
 							.map((obj: any) => [obj.entity, obj.attribute, obj.value])
 
 						// Bind the unknowns.
@@ -92,7 +92,7 @@ export function createSQLiteDatabase(dbPath: string): Database {
 						// E__
 						// Warning: this is expensive.
 						const facts: Array<Fact> = e
-							.get(entity.value)
+							.all(entity.value)
 							.map((obj: any) => [obj.entity, obj.attribute, obj.value])
 
 						// Bind the unknowns.
@@ -107,7 +107,7 @@ export function createSQLiteDatabase(dbPath: string): Database {
 					if (value.type === "known") {
 						// _AV
 						const facts: Array<Fact> = av
-							.get(attribute.value, value.value)
+							.all(attribute.value, value.value)
 							.map((obj: any) => [obj.entity, obj.attribute, obj.value])
 
 						// Bind the unknowns.
@@ -119,7 +119,7 @@ export function createSQLiteDatabase(dbPath: string): Database {
 						// _A_
 						// Warning: this is expensive.
 						const facts: Array<Fact> = a
-							.get(attribute.value)
+							.all(attribute.value)
 							.map((obj: any) => [obj.entity, obj.attribute, obj.value])
 
 						// Bind the unknowns.
@@ -133,7 +133,7 @@ export function createSQLiteDatabase(dbPath: string): Database {
 						// __V
 						// Warning: this is expensive.
 						const facts: Array<Fact> = v
-							.get(value.value)
+							.all(value.value)
 							.map((obj: any) => [obj.entity, obj.attribute, obj.value])
 
 						// Bind the unknowns.
@@ -145,7 +145,7 @@ export function createSQLiteDatabase(dbPath: string): Database {
 						// ___
 						// Warning: this is *very* expensive.
 						const facts: Array<Fact> = star
-							.get()
+							.all()
 							.map((obj: any) => [obj.entity, obj.attribute, obj.value])
 
 						// Bind the unknowns.

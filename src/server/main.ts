@@ -2,7 +2,7 @@ import * as express from "express"
 import * as morgan from "morgan"
 import * as WebSocket from "ws"
 import * as fs from "fs-extra"
-import { createEmptyDatabase } from "../shared/database/eavStore"
+import { createSQLiteDatabase } from "../shared/database/sqlite"
 import {
 	Transaction,
 	submitTransaction,
@@ -19,6 +19,7 @@ import {
 } from "../shared/database/subscriptionHelpers"
 import { Message } from "../shared/protocol"
 import { unreachable } from "../shared/typeUtils"
+import { createInMemoryDatabase } from "../shared/database/memory"
 
 const app = express()
 app.use(morgan("dev"))
@@ -39,20 +40,10 @@ const wss = new WebSocket.Server({ server, path: "/ws" })
 // Load the database from disk if it exists.
 const dbPath = rootPath("database.json")
 console.log(dbPath)
-let database = createEmptyDatabase()
-try {
-	database = JSON.parse(fs.readFileSync(dbPath, "utf8"))
-	console.log("Loaded database from disk.")
-} catch (error) {
-	console.log("Could not load database from disk.")
-}
-
-// Serialize all transactions to make sure that we aren't writing
-// the database.json file more than once at a time.
-const transactionQueue = new AsyncQueue(1)
+const database = createSQLiteDatabase(rootPath("eav.db"))
 
 // Create an in-memory database for managing websocket subscriptions.
-const subscriptions = createEmptyDatabase()
+const subscriptions = createInMemoryDatabase()
 
 const sockets: { [socketId: string]: WebSocket } = {}
 
@@ -73,25 +64,22 @@ wss.on("connection", ws => {
 		if (message.type === "transaction") {
 			console.log("<- write")
 			// Enqueue a transaction to write serially.
-			transactionQueue.enqueue(async () => {
-				const broadcast = submitTransaction({
-					subscriptions,
-					database,
-					transaction: message.transaction,
-				})
-				await fs.writeFile(dbPath, JSON.stringify(database), "utf8")
-
-				const entries = Object.entries(broadcast).filter(
-					([socketId]) => socketId !== thisSocketId
-				)
-				if (entries.length) {
-					console.log(" -> broadcast", entries.length)
-					for (const [socketId, transaction] of entries) {
-						const ws = sockets[socketId]
-						wsSend(ws, { type: "transaction", transaction })
-					}
-				}
+			const broadcast = submitTransaction({
+				subscriptions,
+				database,
+				transaction: message.transaction,
 			})
+
+			const entries = Object.entries(broadcast).filter(
+				([socketId]) => socketId !== thisSocketId
+			)
+			if (entries.length) {
+				console.log(" -> broadcast", entries.length)
+				for (const [socketId, transaction] of entries) {
+					const ws = sockets[socketId]
+					wsSend(ws, { type: "transaction", transaction })
+				}
+			}
 		} else if (message.type === "subscribe") {
 			console.log("<- subscribe")
 

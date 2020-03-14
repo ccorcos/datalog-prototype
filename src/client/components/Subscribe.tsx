@@ -7,7 +7,7 @@
 import * as _ from "lodash"
 import * as React from "react"
 import { randomId } from "../../shared/randomId"
-import { createEmptyDatabase } from "../../shared/database/eavStore"
+import { createInMemoryDatabase } from "../../shared/database/memory"
 import {
 	Transaction,
 	submitTransaction,
@@ -24,10 +24,10 @@ import {
 import { Message, TransactionMessage } from "../../shared/protocol"
 
 // A local cache of only the facts relevant to the client.
-const database = createEmptyDatabase()
+const database = createInMemoryDatabase()
 
 // A separate cache that keeps track of `<Subscribe/>` components.
-const subscriptions = createEmptyDatabase()
+const subscriptions = createInMemoryDatabase()
 
 // Create a websocket for subscribing to updates from the server.
 const ws = new WebSocket(`ws://localhost:8081/ws`)
