@@ -1,5 +1,5 @@
 import * as sqlite from "better-sqlite3"
-import { Fact } from "./memory"
+import { Fact } from "./types"
 import { Expression, Binding } from "./queryHelpers"
 
 const bootup = `

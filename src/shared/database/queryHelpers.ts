@@ -7,9 +7,8 @@
 */
 
 import * as _ from "lodash"
-import { Database, Fact } from "./memory"
+import { Database, Fact, DatabaseValue } from "./types"
 import { compare } from "./compare"
-import { DatabaseValue } from "./indexHelpers"
 
 /**
  * A query is a declarative datalog-like structure where strings that start

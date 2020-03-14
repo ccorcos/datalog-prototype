@@ -9,6 +9,7 @@
 
 import { binarySearch } from "../binarySearch"
 import { compare, MIN, MAX } from "./compare"
+import { DatabaseValue } from "./types"
 
 /**
  * When building composite indexes, it becomes important to specify how you
@@ -17,14 +18,6 @@ import { compare, MIN, MAX } from "./compare"
 export type SortDirections<T extends Array<any>> = {
 	[K in keyof T]: 1 | -1
 }
-
-/**
- * This database only stores simple primative values. You can construct larger
- * data structures from these primative if you want, but you will be responsible
- * for how that conversion works. That way, you have fine grained control over
- * how the CRDT works.
- */
-export type DatabaseValue = string | number | boolean
 
 /**
  * An index consists of an array of tuples in sorted order according to the

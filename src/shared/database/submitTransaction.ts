@@ -1,8 +1,8 @@
-import { Database, Fact, setFact, unsetFact } from "./eavStore"
 import {
 	getSubscriptionUpdates,
 	evaluateSubscriptionUpdates,
 } from "./subscriptionHelpers"
+import { Fact, Database } from "./types"
 
 export type Transaction = {
 	sets: Array<Fact>

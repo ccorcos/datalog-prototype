@@ -6,7 +6,8 @@
 
 */
 
-import { SortDirections, DatabaseValue } from "./indexHelpers"
+import { SortDirections } from "./indexHelpers"
+import { DatabaseValue } from "./types"
 
 // MIN and MAX are useful for querying ranges.
 export const MIN = Symbol("min")

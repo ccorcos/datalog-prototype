@@ -6,7 +6,7 @@
 
 */
 
-import { setFact, unsetFact, Fact, Database } from "./eavStore"
+import { DatabaseValue, Fact, Database } from "./types"
 import {
 	Query,
 	evaluateQuery,
@@ -15,7 +15,6 @@ import {
 	Binding,
 } from "./queryHelpers"
 import { randomId } from "../randomId"
-import { DatabaseValue } from "./indexHelpers"
 
 /**
  * Registers the query listeners for a given `subscriptionId`.

@@ -20,22 +20,12 @@
 import {
 	addToIndex,
 	removeFromIndex,
-	DatabaseValue,
 	DatabaseIndex,
 	scanIndex,
 } from "./indexHelpers"
 import { Expression, Binding } from "./queryHelpers"
 import { MIN, MAX } from "./compare"
-
-export type Fact = [DatabaseValue, DatabaseValue, DatabaseValue]
-
-export interface Database {
-	setFact(fact: Fact): void
-	unsetFact(fact: Fact): void
-	evaluateExpression(
-		expression: Expression
-	): { bindings: Array<Binding>; facts: Array<Fact> }
-}
+import { Fact, Database } from "./types"
 
 interface EAVIndexes {
 	eav: DatabaseIndex<Fact>
