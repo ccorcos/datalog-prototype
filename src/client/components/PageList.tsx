@@ -6,7 +6,7 @@
 
 import * as React from "react"
 import { Subscribe, write } from "./Subscribe"
-import { randomId } from "../../shared/randomId"
+import { createUuid } from "../../shared/randomId"
 import { PageItem } from "./PageItem"
 
 type PageListProps = {
@@ -147,7 +147,7 @@ export class PageList extends React.Component<PageListProps, PageListState> {
 								})}
 								<button
 									onClick={() => {
-										const pageId = randomId()
+										const pageId = createUuid()
 										let sort = 1
 										if (bindings.length > 0) {
 											sort += bindings[bindings.length - 1].sort as number

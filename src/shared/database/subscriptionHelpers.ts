@@ -14,7 +14,7 @@ import {
 	statementsToClause,
 	Binding,
 } from "./queryHelpers"
-import { randomId } from "../randomId"
+import { createUuid } from "../randomId"
 
 /**
  * Registers the query listeners for a given `subscriptionId`.
@@ -25,7 +25,7 @@ export function createSubscription(
 	subscriptionId: string
 ) {
 	// `queryId` is deterministic.
-	const queryId = randomId(JSON.stringify(query))
+	const queryId = createUuid(JSON.stringify(query))
 
 	// Save the query and the subscription that points to it.
 	subscriptions.setFact([queryId, "query", JSON.stringify(query)])
@@ -36,7 +36,7 @@ export function createSubscription(
 	for (const { pattern, inverseBinding } of listeners) {
 		// TODO: `listenerId` could be deterministic, but then we need to differentiate
 		// the inverse binding for each listener-query combination.
-		const listenerId = randomId()
+		const listenerId = createUuid()
 		subscriptions.setFact([queryId, "listener", listenerId])
 		subscriptions.setFact([listenerId, "pattern", JSON.stringify(pattern)])
 		subscriptions.setFact([
@@ -57,7 +57,7 @@ export function destroySubscription(
 	subscriptionId: string
 ) {
 	// `queryId` is deterministic.
-	const queryId = randomId(JSON.stringify(query))
+	const queryId = createUuid(JSON.stringify(query))
 
 	// Check if there other subscriptions for this query.
 	const { bindings } = evaluateQuery(subscriptions, {

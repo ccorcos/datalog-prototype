@@ -43,6 +43,7 @@ Object.assign(config, {
 		port: 8080,
 		proxy: {
 			"/api": "http://localhost:8081",
+			"/file": "http://localhost:8081",
 		},
 	},
 })

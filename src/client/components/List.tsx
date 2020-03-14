@@ -6,7 +6,7 @@
 
 import * as React from "react"
 import { write, Subscribe } from "./Subscribe"
-import { randomId } from "../../shared/randomId"
+import { createUuid } from "../../shared/randomId"
 import { Binding } from "../../shared/database/queryHelpers"
 import { ListAttributes } from "./ListAttributes"
 import { Filter, FilterMenu } from "./FilterMenu"
@@ -41,7 +41,7 @@ export class List extends React.Component<ListProps, ListState> {
 				<h4>Items</h4>
 				<button
 					onClick={() => {
-						const id = randomId()
+						const id = createUuid()
 						write({
 							sets: [[id, "type", "item"]],
 							unsets: [],

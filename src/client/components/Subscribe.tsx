@@ -6,7 +6,7 @@
 
 import * as _ from "lodash"
 import * as React from "react"
-import { randomId } from "../../shared/randomId"
+import { createUuid } from "../../shared/randomId"
 import { createInMemoryDatabase } from "../../shared/database/memory"
 import {
 	Transaction,
@@ -100,7 +100,7 @@ export class Subscribe extends React.Component<SubscribeProps, SubscribeState> {
 	constructor(props: SubscribeProps) {
 		super(props)
 		// Register this component with the registry and subscribe.
-		this.id = randomId()
+		this.id = createUuid()
 		this.start()
 	}
 

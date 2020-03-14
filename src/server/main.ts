@@ -2,6 +2,7 @@ import * as express from "express"
 import * as morgan from "morgan"
 import * as WebSocket from "ws"
 import * as fs from "fs-extra"
+import * as path from "path"
 import { createSQLiteDatabase } from "../shared/database/sqlite"
 import {
 	Transaction,
@@ -11,7 +12,7 @@ import {
 import { AsyncQueue } from "../shared/AsyncQueue"
 import { rootPath } from "../shared/rootPath"
 import { evaluateQuery } from "../shared/database/queryHelpers"
-import { randomId } from "../shared/randomId"
+import { createUuid, isUuid } from "../shared/randomId"
 import {
 	createSubscription,
 	destroySubscription,
@@ -27,6 +28,52 @@ app.use(morgan("dev"))
 // TODO: REST API.
 app.get("/api/hello", (req, res) => {
 	res.json({ result: "World!!" })
+})
+
+function validateFileUrl(url: string) {
+	const rest = url.slice("/file/".length).toLowerCase()
+	const [id, ext] = rest.split(".")
+	if (!id) {
+		return { error: "Missing uuid." }
+	}
+	if (!isUuid(id)) {
+		return { error: "Invalid uuid." }
+	}
+	if (!ext) {
+		return { error: "Missing ext." }
+	}
+	if (!/^[a-z]+$/.test(ext) || ext.length > 10) {
+		return { error: "Invalid ext: " + ext }
+	}
+	return { id, ext }
+}
+
+app.put("/file/*", (req, res) => {
+	const result = validateFileUrl(req.path)
+	if (result.error) {
+		res.status(400).send(result.error)
+		return
+	}
+	const { id, ext } = result
+	const filename = `${id}.${ext}`
+	const tmpFile = path.join("/tmp", filename)
+	req.pipe(fs.createWriteStream(tmpFile))
+	req.on("end", () => {
+		fs.move(tmpFile, rootPath("files", filename))
+		res.status(200).send("Thank you!")
+	})
+})
+
+app.get("/file/*", (req, res) => {
+	const result = validateFileUrl(req.path)
+	if (result.error) {
+		res.status(400).send(result.error)
+		return
+	}
+	const { id, ext } = result
+	const filename = `${id}.${ext}`
+	const filePath = rootPath("files", filename)
+	res.sendFile(filePath)
 })
 
 // Start the server.
@@ -54,7 +101,7 @@ function wsSend(ws: WebSocket, message: Message) {
 
 wss.on("connection", ws => {
 	// Keep track of an id for each websocket.
-	const thisSocketId = randomId()
+	const thisSocketId = createUuid()
 	sockets[thisSocketId] = ws
 
 	ws.on("message", data => {

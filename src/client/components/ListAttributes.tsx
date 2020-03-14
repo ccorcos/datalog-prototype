@@ -6,7 +6,7 @@
 
 import * as React from "react"
 import { Subscribe, write } from "./Subscribe"
-import { randomId } from "../../shared/randomId"
+import { createUuid } from "../../shared/randomId"
 
 type ListAttributesProps = {}
 type ListAttributesState = {}
@@ -27,7 +27,7 @@ export class ListAttributes extends React.Component<
 			<div>
 				<button
 					onClick={() => {
-						const id = randomId()
+						const id = createUuid()
 						write({
 							sets: [
 								[id, "type", "attribute"],
