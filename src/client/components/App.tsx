@@ -15,6 +15,7 @@ import { LoggedIn } from "./LoggedIn"
 import { PageList } from "./PageList"
 import { Table } from "./Table"
 import { List } from "./List"
+import { Images } from "./Images"
 
 type AppProps = {}
 type AppState = { loggedIn: false } | LoggedInState
@@ -22,7 +23,7 @@ type AppState = { loggedIn: false } | LoggedInState
 type LoggedInState = {
 	loggedIn: true
 	username: string
-	route: "outliner" | "table" | "list"
+	route: "outliner" | "table" | "list" | "images"
 }
 
 export class App extends React.Component<AppProps, AppState> {
@@ -32,7 +33,7 @@ export class App extends React.Component<AppProps, AppState> {
 		super(props)
 		const username = getLoggedInUsername()
 		if (username) {
-			this.state = { loggedIn: true, username, route: "outliner" }
+			this.state = { loggedIn: true, username, route: "images" }
 		} else {
 			this.state = { loggedIn: false }
 		}
@@ -60,6 +61,12 @@ export class App extends React.Component<AppProps, AppState> {
 					>
 						table
 					</button>
+					<button
+						disabled={this.state.route === "images"}
+						onClick={() => this.setState({ ...this.state, route: "images" })}
+					>
+						images
+					</button>
 					{this.renderRoute(this.state)}
 				</LoggedIn>
 			)
@@ -73,6 +80,8 @@ export class App extends React.Component<AppProps, AppState> {
 			return <Table username={state.username} />
 		} else if (state.route === "list") {
 			return <List username={state.username} />
+		} else if (state.route === "images") {
+			return <Images username={state.username} />
 		} else {
 			return <PageList username={state.username} />
 		}
