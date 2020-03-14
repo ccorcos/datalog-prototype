@@ -29,8 +29,8 @@ export function createSubscription(
 	const queryId = randomId(JSON.stringify(query))
 
 	// Save the query and the subscription that points to it.
-	setFact(subscriptions, [queryId, "query", JSON.stringify(query)])
-	setFact(subscriptions, [queryId, "subscriptionId", subscriptionId])
+	subscriptions.setFact([queryId, "query", JSON.stringify(query)])
+	subscriptions.setFact([queryId, "subscriptionId", subscriptionId])
 
 	// Save each listener with a pointer back to the query.
 	const listeners = getListenersForQuery(query)
@@ -38,9 +38,9 @@ export function createSubscription(
 		// TODO: `listenerId` could be deterministic, but then we need to differentiate
 		// the inverse binding for each listener-query combination.
 		const listenerId = randomId()
-		setFact(subscriptions, [queryId, "listener", listenerId])
-		setFact(subscriptions, [listenerId, "pattern", JSON.stringify(pattern)])
-		setFact(subscriptions, [
+		subscriptions.setFact([queryId, "listener", listenerId])
+		subscriptions.setFact([listenerId, "pattern", JSON.stringify(pattern)])
+		subscriptions.setFact([
 			listenerId,
 			"inverseBinding",
 			JSON.stringify(inverseBinding),
@@ -81,11 +81,11 @@ export function destroySubscription(
 			],
 		})
 		for (const fact of facts) {
-			unsetFact(subscriptions, fact)
+			subscriptions.unsetFact(fact)
 		}
 	} else {
 		// Otherwise, just remove the subscriptionId from this query.
-		unsetFact(subscriptions, [queryId, "subscriptionId", subscriptionId])
+		subscriptions.unsetFact([queryId, "subscriptionId", subscriptionId])
 	}
 }
 

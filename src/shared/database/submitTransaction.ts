@@ -35,10 +35,10 @@ export function submitTransaction(args: {
 
 	// Execute the writes.
 	for (const fact of sets) {
-		setFact(database, fact)
+		database.setFact(fact)
 	}
 	for (const fact of unsets) {
-		unsetFact(database, fact)
+		database.unsetFact(fact)
 	}
 
 	// Figure out the subscription updates for the new values.
