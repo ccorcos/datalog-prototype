@@ -7,7 +7,7 @@
 */
 
 import * as _ from "lodash"
-import { Database, Fact } from "./eavStore"
+import { Database, Fact } from "./memory"
 import { compare } from "./compare"
 import { DatabaseValue } from "./indexHelpers"
 

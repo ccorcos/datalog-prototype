@@ -1,6 +1,6 @@
 import * as sqlite from "better-sqlite3"
-import { Fact } from "../database/eavStore"
-import { Expression, Binding } from "../database/queryHelpers"
+import { Fact } from "./memory"
+import { Expression, Binding } from "./queryHelpers"
 
 const bootup = `
 CREATE TABLE IF NOT EXISTS eav (entity NUMERIC, attribute NUMERIC, value NUMERIC)
@@ -19,7 +19,7 @@ interface Database {
 	): { bindings: Array<Binding>; facts: Array<Fact> }
 }
 
-export function createEmptyDatabase(dbPath: string): Database {
+export function createSQLiteDatabase(dbPath: string): Database {
 	const db = sqlite(dbPath)
 	for (const cmd in bootup) {
 		db.prepare(cmd).run()

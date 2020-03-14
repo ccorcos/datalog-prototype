@@ -50,7 +50,7 @@ interface EAVIndexes {
 // a
 // av
 // v
-export function createEmptyDatabase(): Database {
+export function createInMemoryDatabase(): Database {
 	const eav: DatabaseIndex<Fact> = {
 		sort: [1, 1, 1],
 		values: [],
