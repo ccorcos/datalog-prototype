@@ -44,7 +44,7 @@ export type Unknown = { type: "unknown"; name: string }
  * Query statments are interpretted into expressions with strings prefixed
  * with a `?` indicating an `Unknown`.
  */
-type Expression = {
+export type Expression = {
 	entity: Known | Unknown
 	attribute: Known | Unknown
 	value: Known | Unknown
