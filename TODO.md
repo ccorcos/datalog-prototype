@@ -1,6 +1,8 @@
 ## To Do / What's Next
 
 - Tests
+- Better UI ergonomics.
+
 - Offline sync demo with conflict resolution.
 - Implement an `EXPLAIN` command to gain insights into query performance.
 - Use subscriptions to implement query indexes.
