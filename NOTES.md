@@ -153,9 +153,11 @@ When it comes to evaluating a datalog query, we need 3 different composite index
 ### Evaluation
 
 Evaluating a query is fairly simple:
-- iterate through each expression
-- determine the index needed to scan to solve for the unknowns
-- for each result, substitute the unknowns for the variables in the rest of the expression and recurse...
+1. Take the first expression from your query.
+2. Determine the index needed to scan to solve for the unknowns.
+3. For each result...
+4. Substitute the unknowns for the variables in the rest of the expressions.
+5. Take the next expression and recurse to (2).
 
 For example, given the query from above:
 
@@ -164,21 +166,30 @@ For example, given the query from above:
 ["?id", "name", "?name"]
 ```
 
-We solve the first expression, `["?id", "role", "engineering"]`, by scanning the `AVE` index. That gives us a list of ids `Array<{id: string}>`.
+We solve the first expression, `["?id", "role", "engineering"]`, by scanning the `AVE` index. That gives us the result `[{id: "0eaebc3e"}, {id: "3daeb70b"}]`.
 
-Then for the each id, we substitute in the second expression `["?id", "name", "?name"]` and use the `EAV` index to look up the name which leaves us a result of `Array<{id: string, name: string}>`.
+Then for the each id, we substitute in the second expression `["?id", "name", "?name"]`. and use the `EAV` index to look up the name.
+
+- `{id: "0eaebc3e"}` -> `["0eaebc3e", "name", "?name"]` -> `{id: "0eaebc3e", name: "Chet Corcos"}`
+- `{id: "3daeb70b"}` -> `["3daeb70b", "name", "?name"]` -> `{id: "3daeb70b", name: "Simon Last"}`
+
+And thus the result of the query is `[{id: "0eaebc3e", name: "Chet Corcos"}, {id: "3daeb70b", name: "Simon Last"}]`.
 
 ### Performance
 
-The order that the expressions are evaluated here is important for performance, but also largely depends on the ontology of data being represented.
+The order of evaluting the expressions is important for performance, but largely depends on the ontology of data being represented.
 
-A really simple heuristic is to sort expressions by the least number of unknowns to evaluate first. This is almost always the best thing to do, but it entirely depends on the information stored in the database. For example, maybe there are 1M entities with role: engineer, but only 10 entities in the database with a name. There are some things we could do here to improve this heuristic but it's good enough for now.
+A really simple heuristic is to evaluate the expression with the least number of unknowns first because it will likely have the fewest results and thus a smaller amount of fanout when recusing to the rest of the expressions.
 
-We can guarantee that this query evaluates in polynomial time - `O(n^z)` where `z` is the number of expressions, and `n` is the size of the largest result set from any single expression. Interestingly, the actual performance of any query drills down to the essential complexity of the underlying information ontology.
+This is *almost* always the best thing to do, but it entirely depends on the ontology of information stored in the database. For example, maybe there are 1M entities with role: engineer, but only 10 entities in the database with a name. If we solve for role: engineer first, we'll have to run 10M queries whereas if we solve for name first, we'll have only 20 queries to run. Thus, solving for the fewest number of unknowns if a good heuristic that usually works, but it is not perfect and is merely a heuristic.
+
+There are some things we could do to improve this heuristic. For example, the underlying storage mechanism could store the size of a query result which would inform the query-planner of what expression to evaluate first. However, this is good enough for now.
+
+Overall, we can guarantee that this query evaluates in polynomial time - `O(n^z)` where `z` is the number of expressions, and `n` is the size of the largest result set from any single expression. Interestingly, the actual performance of any query drills down to the essential complexity of the underlying information ontology.
 
 ## Reactivity
 
-One elegance of Datalog queries is how easy it is to make them reactive.
+One amazing feature of Datalog queries is how easy it is to make them reactive.
 
 Given our query from before:
 
@@ -187,21 +198,40 @@ Given our query from before:
 ["?id", "name", "?name"]
 ```
 
-If the fact `["6ed62fe2", "name", "Joe"]` was written to the database, we know that our query might have to update because it matches one of our expressions.
+If the fact `["6ed62fe2", "name", "Joe"]` was written to the database, we intuitively know that our query might have to update because it *matches* one of our expressions: `["?id", "name", "?name"]`.
 
-How do reactive updates work?
-- listeners for a query
-- inverse bindings
-- re-evaluation
-
---- HERE
+To compute this, the first thing we do is create a listener pattern for each expression.
 
 ```js
-["?id", "role", "engineering"] -> [*, "role", "engineering"]
-["?id", "name", "?name"] -> [*, "name", *]
+["?id", "role", "engineering"] -> {
+	pattern: [*, "role", "engineering"],
+	unknowns: ["id", null, null],
+}
+["?id", "name", "?name"] -> {
+	pattern: [*, "name", *],
+	unknowns: ["id", null, "name"]
+}
 ```
 
-Permute every fact 8 ways
+We then save these listener patterns in an in-memory data-structure:
+
+*Note that we can use an EAV 3-tuple database to store this information if we want!*
+
+```js
+const listeners = {
+	[`[*, "role", "engineering"]`]: [
+		{unknowns: `["id", null, null]`, query: `[["?id", "name", "?name"]]`, callback: () => {} }
+	],
+	[`[*, "name", *]`]: [
+		{unknowns: `["id", null, "name"]`, query: `[["?id", "role", "engineering"]`, callback: () => {} }
+	]
+}
+```
+
+The query we save with the listener is the remaining query after removing the expression that we're listeneing on.
+
+When a we write a fact to the database such as `["6ed62fe2", "name", "Joe"]`, we permute the fact into the 8 different patterns that it could possibly trigger:
+
 ```js
 ["6ed62fe2", "name", "Joe"]
 [*, "name", "Joe"]
@@ -213,22 +243,25 @@ Permute every fact 8 ways
 [*, *, *]
 ```
 
-Query database 8 times.
+We lookup any listeners for each pattern and we'll find a result for `[*, "name", *]`.
+
+When we bind the unknowns from the pattern, we end up with `{id: "6ed62fe2", name: "Joe"}`.
+
+Next, we substitute into the unknowns into rest of the query just as we would in step 4 of evaluating any query.
 
 ```js
-[*, "name", *] -> ["?id", "name", "?name"]
+["6ed62fe2", "role", "engineering"],
 ```
 
-Bind results `{id: "6ed62fe2", name: "Joe"}`
+The result of this query tells us if Joe has role: engineering or not, and thus whether the listener callback should fire or not. Furthermore, if Joe is role: engineering, we can call the callback with `{id: "6ed62fe2", name: "Joe"}` which is the only only information needed to update the query -- we don't have to re-run the entire query again!
 
-Compute the rest of the query
-```js
-["6ed62fe2", "role", "engineering"]
-```
+One thing to notice is that this logic is exactly the same for deleting facts. You just need to make sure to compute the listener updates *before* actually removing the fact. Additionally, you need to make sure that any results your are deleting are in fact invalid because its possible that you eliminated only one way of coming to the solution, but there's another way of coming to the same solution. For example, if you are querying for friend-of-a-friend, and friend A unfriends B, its possible that you're still friends with C who is friends with B. Thus when A unfriends B and you compute the B is no longer a result, you need to double-check before broadcasting.
 
-If this person's role is engineering, then the query needs to update.
 
-Performance:
+-- HERE
+
+### Performance
+
 Every time someone updates a name, we need to recompute this query. That's not great if people are updating names all the time. What we could do is separate these queries into two separate expressions mapped on the client. This makes it more like a key-value lookup. The trade-off here is explicit. Key-value means more subscriptions and client-side load. Larger queries means more communication load. Basically, the performance depends again, entirely on the data ontology.
 
 What is the performance?
@@ -292,7 +325,6 @@ What are all the indexes we need?
 Query planner and evaluator.
 
 
-
 - Why Datalog?
 - How does it work?
 - What can you do with it?
@@ -304,3 +336,36 @@ What else works like this?
 - SPARQL WikiData Semantic Web RDF
 - Datomic Datalog Prolog
 -
+
+e, a, v, t
+
+a - red                       red->green
+b -             red->blue ------------------------^
+c - red
+
+its legitimately both. causality is not a problem here.
+
+transaction log.
+listeners broadcast to other logs
+other logs are consumed by sync for collaboration
+also broadcast to indexers
+
+```js
+const a = new EventEmitter()
+const b = new EventEmitter()
+
+me = []
+head = {}
+a.on("connect", other => {
+	other.emit("sync", head[other])
+})
+
+a.on("sync", (other, n) => {
+	other.emit("data", me.slice(n))
+})
+
+a.emit("connect", b)
+```
+
+log.from(log.source()).pipe(log.dest())
+

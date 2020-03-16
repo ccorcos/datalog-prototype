@@ -46,17 +46,3 @@ One of the most elegant things about this demo is how these abstractions have be
 - The subscription helpers are used for broadcasting updates to all websockets that are subscribed to a query, and this same exact code is used for broadcasting updates to all `<Subscribe/>` components that are rendering the result of a query.
 - We use the same query logic on the client and the server so that we can optimistially write to the local cache on the client.
 
-## To Do / What's Next
-
-- Offline sync demo with conflict resolution.
-- Lexicographical tuple encoder for use with sorted key-value stores.
-- Implement an `explain` command to gain insights into query performance.
-- Use subscriptions to implement query indexes.
-- Implement on top of DynamoDb + Kinesis for a *really* scalable solution.
-
-- Efficient offline sync checkpoints.
-- Better unset broadcast logic.
-
-- Bug with scanIndex prefix searching.
-
-- Efficient broadcasting -- how efficient?
