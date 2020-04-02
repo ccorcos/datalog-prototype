@@ -138,7 +138,7 @@ When it comes to evaluating a datalog query, we need 3 different composite index
 
 - `AVE`
 
-	Used for expressions such as `["?id", "email", email]` and `["?id", "email", "?email"]`.
+	Used for expressions such as `["?id", "email", "ccorcos@gmail.com"]` and `["?id", "email", "?email"]`.
 
 	This let's you look up an entity based on an attribute-value pair. For example, you can look up a user by email.
 
@@ -259,6 +259,27 @@ One thing to notice is that this logic is exactly the same for deleting facts. Y
 
 
 -- HERE
+
+Simon thoughts:
+
+?block parent "xx"
+?block title ?title
+
+emit optimizer gets the parent. query parent once instead of n.
+
+
+sort and limit -- effient range updates.
+
+
+- Explain fanout
+- More efficient emitting
+- Indexing
+- DynamoDb.
+	eav - [e, a]
+	ave - [a, v]
+	query: [queryId, tuple[0]]
+
+
 
 ### Performance
 
