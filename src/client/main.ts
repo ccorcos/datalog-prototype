@@ -2,6 +2,8 @@ import * as React from "react"
 import * as ReactDOM from "react-dom"
 import { css } from "glamor"
 import { App } from "./components/App"
+
+// Setup the websocket.
 import "./components/Subscribe"
 
 css.global("a", {

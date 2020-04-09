@@ -1,5 +1,10 @@
 ## To Do / What's Next
 
+- examples
+	- router
+	- ideaflow/roam clone
+	- file explorer
+
 - Tests
 - Better UI ergonomics.
 
@@ -11,3 +16,7 @@
 - Better unset broadcast logic.
 
 - Bug with scanIndex prefix searching.
+
+- database dashboard
+- crdt text
+- ideaflow/roam clone

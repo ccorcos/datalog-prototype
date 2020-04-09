@@ -99,12 +99,12 @@ function wsSend(ws: WebSocket, message: Message) {
 	ws.send(JSON.stringify(message))
 }
 
-wss.on("connection", ws => {
+wss.on("connection", (ws) => {
 	// Keep track of an id for each websocket.
 	const thisSocketId = createUuid()
 	sockets[thisSocketId] = ws
 
-	ws.on("message", data => {
+	ws.on("message", (data) => {
 		// Handle messages from the client.
 		const message: Message = JSON.parse(data.toString())
 
@@ -141,6 +141,7 @@ wss.on("connection", ws => {
 			}
 			wsSend(ws, { type: "transaction", transaction })
 		} else if (message.type === "unsubscribe") {
+			console.log("<- unsubscribe")
 			destroySubscription(subscriptions, message.query, thisSocketId)
 		} else {
 			unreachable(message)
