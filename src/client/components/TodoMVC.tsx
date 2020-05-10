@@ -5,87 +5,72 @@
 */
 
 import * as React from "react"
-import { Subscribe, write } from "./Subscribe"
+import { write, useQuery } from "./Subscribe"
 import * as _ from "lodash"
 import { TodoItem } from "./TodoItem"
 import { createUuid } from "../../shared/randomId"
 import { toDateString } from "../../shared/dateHelpers"
 import { Fact } from "../../shared/database/types"
 
-type TodoMVCProps = {}
-type TodoMVCState = {
-	filter: "all" | "checked" | "unchecked"
-}
+type TodoFilters = "all" | "checked" | "unchecked"
 
-const filterNextMap = {
+const filterNextMap: Record<TodoFilters, TodoFilters> = {
 	all: "unchecked",
 	unchecked: "checked",
 	checked: "all",
-} as const
+}
 
-export class TodoMVC extends React.Component<TodoMVCProps, TodoMVCState> {
-	state: TodoMVCState
+const filterQueryMap: Record<TodoFilters, Array<Fact>> = {
+	all: [],
+	unchecked: [["?id", "completed", 0]],
+	checked: [["?id", "completed", 1]],
+}
 
-	constructor(props: TodoMVCProps) {
-		super(props)
-		this.state = {
-			filter: "all",
-		}
-	}
+export function TodoMVC() {
+	const [filter, setFilter] = React.useState<TodoFilters>("all")
 
-	render() {
-		const extraFilter: Array<Fact> =
-			this.state.filter === "all"
-				? []
-				: this.state.filter === "unchecked"
-				? [["?id", "completed", 0]]
-				: [["?id", "completed", 1]]
+	const handleToggleFilter = React.useCallback(() => {
+		setFilter(filterNextMap[filter])
+	}, [filter])
 
-		// Lets first try with subscribe and move to something better from there.
-		return (
+	const handleNewTodo = React.useCallback(() => {
+		const id = createUuid()
+		write({
+			sets: [
+				[id, "type", "todo"],
+				[id, "created_time", toDateString(new Date())],
+				[id, "completed", 0],
+			],
+			unsets: [],
+		})
+	}, [])
+
+	const bindings = useQuery({
+		statements: [
+			["?id", "type", "todo"],
+			["?id", "created_time", "?created_time"],
+			...filterQueryMap[filter],
+		],
+		sort: [
+			["?created_time", 1],
+			["?id", 1],
+		],
+	})
+
+	// Its possible that there's more than one created_time and we also don't know
+	// that all the ids are strings as we expect. So we need to filter these down.
+	const ids = _.uniq(bindings.map(({ id }) => id).filter(_.isString))
+
+	return (
+		<div>
+			<div>Todos</div>
 			<div>
-				<div>Todos</div>
-				<div>
-					Filter:
-					<button onClick={this.handleToggleFilter}>{this.state.filter}</button>
-				</div>
-				<Subscribe
-					query={{
-						statements: [
-							["?id", "type", "todo"],
-							["?id", "created_time", "?created_time"],
-							...extraFilter,
-						],
-						sort: [
-							["?created_time", 1],
-							["?id", 1],
-						],
-					}}
-					render={(bindings) => {
-						const ids = bindings.map(({ id }) => id).filter(_.isString)
-						return ids.map((id) => <TodoItem key={id} id={id} />)
-					}}
-				/>
-				<button
-					onClick={() => {
-						const id = createUuid()
-						write({
-							sets: [
-								[id, "type", "todo"],
-								[id, "created_time", toDateString(new Date())],
-								[id, "completed", 0],
-							],
-							unsets: [],
-						})
-					}}
-				>
-					New Todo
-				</button>
+				Filter: <button onClick={handleToggleFilter}>{filter}</button>
 			</div>
-		)
-	}
-
-	handleToggleFilter = () => {
-		this.setState({ filter: filterNextMap[this.state.filter] })
-	}
+			{ids.map((id) => (
+				<TodoItem key={id} id={id} />
+			))}
+			<button onClick={handleNewTodo}>New Todo</button>
+		</div>
+	)
 }
