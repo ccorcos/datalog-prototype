@@ -36,7 +36,6 @@ export class TodoItem extends React.Component<TodoItemProps, TodoItemState> {
 								type="checkbox"
 								checked={completed}
 								onChange={(e) => {
-									console.log(e.currentTarget.checked)
 									write({
 										sets: [[id, "completed", e.currentTarget.checked ? 1 : 0]],
 										unsets: bindings.map(({ completed }) => [
@@ -79,7 +78,7 @@ export class TodoItem extends React.Component<TodoItemProps, TodoItemState> {
 							.filter(_.isString)
 						// TODO: conflict resolution popup.
 						const createdTime = createdTimes[0]
-						return <div>Created: {createdTime}</div>
+						return <span> {createdTime}</span>
 					}}
 				/>
 			</div>
