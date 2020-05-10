@@ -5,6 +5,9 @@
 	- ideaflow/roam clone
 	- file explorer
 
+- try-catch sqlite errors
+- retry websocket connect
+
 - Tests
 - Better UI ergonomics.
 

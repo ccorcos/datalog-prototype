@@ -50,7 +50,7 @@ export type Expression = {
 }
 
 function statementToExpression(statement: Fact): Expression {
-	const [entity, attribute, value] = statement.map(value => {
+	const [entity, attribute, value] = statement.map((value) => {
 		if (typeof value === "string" && value.startsWith("?")) {
 			const unknown: Unknown = { type: "unknown", name: value.slice(1) }
 			return unknown
@@ -123,10 +123,10 @@ function evaluateClause(
 
 	// Otherwise substitute the unknowns
 	const allBindings = results.bindings
-		.map(binding => {
+		.map((binding) => {
 			// For each result of the first expression, fill in the unknowns in the
 			// rest of the expressions to evaluate the rest of the solution.
-			const remainingExpressions = rest.map(expression => {
+			const remainingExpressions = rest.map((expression) => {
 				const resolved = { ...expression }
 				if (resolved.entity.type === "unknown") {
 					if (resolved.entity.name in binding) {
@@ -161,7 +161,7 @@ function evaluateClause(
 			// TODO: this might be returning more facts than are strictly necessary for
 			// the query. However, we'll be getting rid of this soon (see other TODOs).
 			allFacts.push(...remainingResults.facts)
-			return remainingResults.bindings.map(moreBindings => {
+			return remainingResults.bindings.map((moreBindings) => {
 				return { ...moreBindings, ...binding }
 			})
 		})
@@ -187,7 +187,7 @@ export function evaluateQuery(database: Database, query: Query) {
 	const results = evaluateClause(database, clause)
 	if (query.sort) {
 		const sort = query.sort
-		const cmp = compare(query.sort.map(([name, direction]) => direction))
+		const cmp = compare(sort.map(([name, direction]) => direction))
 		results.bindings.sort((a, b) => {
 			return cmp(
 				sort.map(
