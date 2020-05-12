@@ -32,6 +32,7 @@ import { compare } from "./compare"
  * good programming ergonomics.
  */
 export type Query = {
+	// filter, sort, select, limit, offset, merge
 	statements: Array<Fact>
 	sort?: Array<[string, 1 | -1]>
 }

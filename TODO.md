@@ -2,13 +2,11 @@
 
 https://www.notion.so/e63e3224c240470e8ea82cea0af4fa23#f3d1d2e10645465791a772e5c7e32965
 - TodoMVC
-	- better developer ergonomics
 	- implement indexing and paging
 
 
 
 - examples
-	- router
 	- ideaflow/roam clone
 	- file explorer
 
@@ -16,7 +14,6 @@ https://www.notion.so/e63e3224c240470e8ea82cea0af4fa23#f3d1d2e10645465791a772e5c
 - retry websocket connect
 
 - Tests
-- Better UI ergonomics.
 
 - Offline sync demo with conflict resolution.
 - Implement an `EXPLAIN` command to gain insights into query performance.
