@@ -1,4 +1,4 @@
-import * as sqlite from "better-sqlite3"
+import sqlite from "better-sqlite3"
 import { Fact } from "./types"
 import { Expression, Binding } from "./queryHelpers"
 

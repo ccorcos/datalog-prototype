@@ -8,6 +8,7 @@
 		"removeComments": true,
 		"sourceMap": true,
 		"allowJs": true,
+		"esModuleInterop": true,
 		"lib": ["DOM", "ES2019"]
 	},
 	"include": ["src/**/*"],

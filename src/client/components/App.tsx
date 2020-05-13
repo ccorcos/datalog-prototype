@@ -4,8 +4,8 @@
 
 */
 
-import * as React from "react"
-import { TodoMVC } from "./TodoMVC"
+import React from "react"
+import { MyEditor } from "./Editor"
 
 type AppProps = {}
 type AppState = {}
@@ -16,6 +16,6 @@ export class App extends React.Component<AppProps, AppState> {
 	}
 
 	render() {
-		return <TodoMVC />
+		return <MyEditor />
 	}
 }

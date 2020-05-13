@@ -4,23 +4,10 @@
 
 */
 
-import * as React from "react"
+import React, { useCallback, useMemo, useState } from "react"
 
 type NewComponentProps = {}
-type NewComponentState = {}
 
-export class NewComponent extends React.Component<
-	NewComponentProps,
-	NewComponentState
-> {
-	state: NewComponentState
-
-	constructor(props: NewComponentProps) {
-		super(props)
-		this.state = {}
-	}
-
-	render() {
-		return <div>hello</div>
-	}
+export function NewComponent(props: NewComponentProps) {
+	return <div>hello</div>
 }
