@@ -51,34 +51,10 @@ declare module "slate" {
 	interface IText {
 		bold?: string
 	}
-	interface IEditor {
-		bold: ReturnType<typeof createBoldInterface>
-	}
-}
 
-function createBoldInterface(editor: IEditor) {
-	return {
-		isActive() {
-			const [match] = Editor.nodes(editor, {
-				match: (n) => n.bold === true,
-				universal: true,
-			})
-			return !!match
-		},
-		toggle() {
-			const isActive = editor.bold.isActive()
-			Transforms.setNodes(
-				editor,
-				{ bold: isActive ? null : true },
-				{ match: (n) => Text.isText(n), split: true }
-			)
-		},
+	interface IElement {
+		type: "paragraph" | "code"
 	}
-}
-
-function withBold(editor: IEditor) {
-	editor.bold = createBoldInterface(editor)
-	return editor
 }
 
 // HERE:
@@ -102,8 +78,26 @@ function toggleCodeBlock(editor: IEditor) {
 	)
 }
 
+function isBoldMarkActive(editor: IEditor) {
+	const [match] = Editor.nodes(editor, {
+		match: (n) => n.bold === true,
+		universal: true,
+	})
+
+	return !!match
+}
+
+function toggleBoldMark(editor: IEditor) {
+	const isActive = isBoldMarkActive(editor)
+	Transforms.setNodes(
+		editor,
+		{ bold: isActive ? null : true },
+		{ match: (n) => Text.isText(n), split: true }
+	)
+}
+
 export function MyEditor() {
-	const editor = useMemo(() => withReact(withBold(createEditor())), [])
+	const editor = useMemo(() => withReact(createEditor()), [])
 
 	const [value, setValue] = useState<Array<Node>>([
 		{
@@ -118,8 +112,7 @@ export function MyEditor() {
 			toggleCodeBlock(editor)
 		} else if (isHotkey("mod+b", event.nativeEvent)) {
 			event.preventDefault()
-			editor.bold.toggle()
-			// toggleBoldMark(editor)
+			toggleBoldMark(editor)
 		}
 	}, [])
 
