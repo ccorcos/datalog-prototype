@@ -1,0 +1,30 @@
+diff --git a/node_modules/slate/dist/interfaces/element.d.ts b/node_modules/slate/dist/interfaces/element.d.ts
+index 2c6013b..f33341c 100644
+--- a/node_modules/slate/dist/interfaces/element.d.ts
++++ b/node_modules/slate/dist/interfaces/element.d.ts
+@@ -8,6 +8,10 @@ export interface Element {
+     children: Node[];
+     [key: string]: unknown;
+ }
++// Run `npm run build-patch` every time you edit this file.
++interface Element {
++    type: "paragraph" | "code"
++}
+ export declare const Element: {
+     /**
+      * Check if a value implements the `Element` interface.
+diff --git a/node_modules/slate/dist/interfaces/text.d.ts b/node_modules/slate/dist/interfaces/text.d.ts
+index 05b6771..d19e3d4 100644
+--- a/node_modules/slate/dist/interfaces/text.d.ts
++++ b/node_modules/slate/dist/interfaces/text.d.ts
+@@ -8,6 +8,10 @@ export interface Text {
+     text: string;
+     [key: string]: unknown;
+ }
++// Run `npm run build-patch` every time you edit this file.
++interface Text {
++    bold?: string
++}
+ export declare const Text: {
+     /**
+      * Check if two text nodes are equal.

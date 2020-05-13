@@ -5,10 +5,63 @@
 */
 
 import React, { useMemo, useState } from "react"
-import { createEditor, Node } from "slate"
+import { createEditor, Node, Editor, Element, Text, Transforms } from "slate"
+import {
+	Slate,
+	Editable,
+	withReact,
+	RenderElementProps,
+	RenderLeafProps,
+} from "slate-react"
+import isHotkey from "is-hotkey"
 
-// Import the Slate components and React plugin.
-import { Slate, Editable, withReact } from "slate-react"
+/*
+Todo:
+- basic blocks
+- basic annotations
+- types
+- markdown autocomplete
+- linkify
+- arrow complete ->
+- nested page
+
+*/
+
+function isCodeBlockActive(editor: Editor) {
+	const [match] = Editor.nodes(editor, {
+		match: (n) => Element.isElement(n) && n.type === "code",
+	})
+
+	return !!match
+}
+
+function toggleCodeBlock(editor: Editor) {
+	const isActive = isCodeBlockActive(editor)
+	Transforms.setNodes(
+		editor,
+		{ type: isActive ? null : "code" },
+		{ match: (n) => Editor.isBlock(editor, n) }
+	)
+}
+
+function isBoldMarkActive(editor: Editor) {
+	const [match] = Editor.nodes(editor, {
+		match: (n) => n.bold === true,
+		universal: true,
+	})
+
+	return !!match
+}
+
+function toggleBoldMark(editor: Editor) {
+	const isActive = isBoldMarkActive(editor)
+	Transforms.setNodes(
+		editor,
+		{ bold: isActive ? null : true },
+		{ match: (n) => Text.isText(n), split: true }
+	)
+}
+
 export function MyEditor() {
 	const editor = useMemo(() => withReact(createEditor()), [])
 
@@ -19,9 +72,83 @@ export function MyEditor() {
 		},
 	])
 
+	const handleKeyDown = React.useCallback((event: React.KeyboardEvent) => {
+		if (isHotkey("mod+e", event.nativeEvent)) {
+			event.preventDefault()
+			toggleCodeBlock(editor)
+		} else if (isHotkey("mod+b", event.nativeEvent)) {
+			event.preventDefault()
+			toggleBoldMark(editor)
+		}
+	}, [])
+
 	return (
 		<Slate editor={editor} value={value} onChange={(value) => setValue(value)}>
-			<Editable />
+			<Editable
+				renderElement={renderElement}
+				renderLeaf={renderLeaf}
+				onKeyDown={handleKeyDown}
+			/>
 		</Slate>
 	)
 }
+
+function CodeElement(props: RenderElementProps) {
+	return (
+		<pre {...props.attributes}>
+			<code>{props.children}</code>
+		</pre>
+	)
+}
+
+function DefaultElement(props: RenderElementProps) {
+	return <p {...props.attributes}>{props.children}</p>
+}
+
+function renderElement(props: RenderElementProps) {
+	switch (props.element.type) {
+		case "code":
+			return <CodeElement {...props} />
+		default:
+			return <DefaultElement {...props} />
+	}
+}
+
+function renderLeaf(props: RenderLeafProps) {
+	let style: React.CSSProperties = {}
+	if (props.leaf.bold) {
+		style.fontWeight = "bold"
+	}
+	return (
+		<span {...props.attributes} style={style}>
+			{props.children}
+		</span>
+	)
+}
+
+// const withImages = editor => {
+//   const { isVoid } = editor
+
+//   editor.isVoid = element => {
+//     return element.type === 'image' ? true : isVoid(editor)
+//   }
+
+//   return editor
+// }
+
+// import { Editor, Element } from 'slate'
+
+// const MyEditor = {
+//   ...Editor,
+//   insertImage(editor, url) {
+//     const element = { type: 'image', url, children: [{ text: '' }] }
+//     Transforms.insertNodes(editor, element)
+//   },
+// }
+
+// const MyElement = {
+//   ...Element,
+//   isImageElement(value) {
+//     return Element.isElement(element) && element.type === 'image'
+//   },
+// }

@@ -7,7 +7,9 @@
 		"start": "run-p start-client start-server",
 		"start-client": "webpack-dev-server --content-base build/client",
 		"start-server": "nodemon --watch src/server --watch src/shared --exec 'node --inspect=5858 -r ts-node/register' ./src/server/main.ts",
-		"build": "rm -rf dist && webpack -p"
+		"build": "rm -rf dist && webpack -p",
+		"postinstall": "patch-package",
+		"build-patch": "patch-package slate"
 	},
 	"keywords": [],
 	"author": "",
@@ -25,6 +27,7 @@
 		"lodash": "^4.17.15",
 		"md5": "^2.2.1",
 		"morgan": "^1.9.1",
+		"patch-package": "^6.2.2",
 		"react": "^16.12.0",
 		"react-dom": "^16.12.0",
 		"slate": "^0.58.1",
