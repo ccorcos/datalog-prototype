@@ -1,30 +1,679 @@
+diff --git a/node_modules/slate/dist/create-editor.d.ts b/node_modules/slate/dist/create-editor.d.ts
+index a9f32d4..b6a025f 100644
+--- a/node_modules/slate/dist/create-editor.d.ts
++++ b/node_modules/slate/dist/create-editor.d.ts
+@@ -1,6 +1,6 @@
+-import { Editor } from './';
++import { IEditor } from './';
+ /**
+  * Create a new Slate `Editor` object.
+  */
+-export declare const createEditor: () => Editor;
++export declare const createEditor: () => IEditor;
+ //# sourceMappingURL=create-editor.d.ts.map
+\ No newline at end of file
+diff --git a/node_modules/slate/dist/interfaces/editor.d.ts b/node_modules/slate/dist/interfaces/editor.d.ts
+index 331fad0..084ad2e 100644
+--- a/node_modules/slate/dist/interfaces/editor.d.ts
++++ b/node_modules/slate/dist/interfaces/editor.d.ts
+@@ -1,16 +1,16 @@
+-import { Ancestor, Descendant, Element, Location, Node, NodeEntry, Operation, Path, PathRef, Point, PointRef, Range, RangeRef, Span, Text } from '..';
++import { Ancestor, Descendant, IElement, Location, Node, NodeEntry, Operation, Path, PathRef, Point, PointRef, Range, RangeRef, Span, IText } from '..';
+ /**
+  * The `Editor` interface stores all the state of a Slate editor. It is extended
+  * by plugins that wish to add their own helpers and implement new behaviors.
+  */
+-export interface Editor {
++export interface IEditor {
+     children: Node[];
+     selection: Range | null;
+     operations: Operation[];
+     marks: Record<string, any> | null;
+     [key: string]: unknown;
+-    isInline: (element: Element) => boolean;
+-    isVoid: (element: Element) => boolean;
++    isInline: (element: IElement) => boolean;
++    isVoid: (element: IElement) => boolean;
+     normalizeNode: (entry: NodeEntry) => void;
+     onChange: () => void;
+     addMark: (key: string, value: any) => void;
+@@ -29,7 +29,7 @@ export declare const Editor: {
+     /**
+      * Get the ancestor above a location in the document.
+      */
+-    above<T extends Ancestor>(editor: Editor, options?: {
++    above<T extends Ancestor>(editor: IEditor, options?: {
+         at?: Range | Path | Point | undefined;
+         match?: ((node: Node) => boolean) | ((node: Node) => node is T) | undefined;
+         mode?: "highest" | "lowest" | undefined;
+@@ -41,140 +41,140 @@ export declare const Editor: {
+      * If the selection is currently collapsed, the marks will be added to the
+      * `editor.marks` property instead, and applied when text is inserted next.
+      */
+-    addMark(editor: Editor, key: string, value: any): void;
++    addMark(editor: IEditor, key: string, value: any): void;
+     /**
+      * Get the point after a location.
+      */
+-    after(editor: Editor, at: Location, options?: {
++    after(editor: IEditor, at: Location, options?: {
+         distance?: number | undefined;
+         unit?: "character" | "word" | "line" | "block" | "offset" | undefined;
+     }): Point | undefined;
+     /**
+      * Get the point before a location.
+      */
+-    before(editor: Editor, at: Location, options?: {
++    before(editor: IEditor, at: Location, options?: {
+         distance?: number | undefined;
+         unit?: "character" | "word" | "line" | "block" | "offset" | undefined;
+     }): Point | undefined;
+     /**
+      * Delete content in the editor backward from the current selection.
+      */
+-    deleteBackward(editor: Editor, options?: {
++    deleteBackward(editor: IEditor, options?: {
+         unit?: "character" | "word" | "line" | "block" | undefined;
+     }): void;
+     /**
+      * Delete content in the editor forward from the current selection.
+      */
+-    deleteForward(editor: Editor, options?: {
++    deleteForward(editor: IEditor, options?: {
+         unit?: "character" | "word" | "line" | "block" | undefined;
+     }): void;
+     /**
+      * Delete the content in the current selection.
+      */
+-    deleteFragment(editor: Editor): void;
++    deleteFragment(editor: IEditor): void;
+     /**
+      * Get the start and end points of a location.
+      */
+-    edges(editor: Editor, at: Location): [Point, Point];
++    edges(editor: IEditor, at: Location): [Point, Point];
+     /**
+      * Get the end point of a location.
+      */
+-    end(editor: Editor, at: Location): Point;
++    end(editor: IEditor, at: Location): Point;
+     /**
+      * Get the first node at a location.
+      */
+-    first(editor: Editor, at: Location): NodeEntry<Node>;
++    first(editor: IEditor, at: Location): NodeEntry<Node>;
+     /**
+      * Get the fragment at a location.
+      */
+-    fragment(editor: Editor, at: Location): Descendant[];
++    fragment(editor: IEditor, at: Location): Descendant[];
+     /**
+      * Check if a node has block children.
+      */
+-    hasBlocks(editor: Editor, element: Element): boolean;
++    hasBlocks(editor: IEditor, element: IElement): boolean;
+     /**
+      * Check if a node has inline and text children.
+      */
+-    hasInlines(editor: Editor, element: Element): boolean;
++    hasInlines(editor: IEditor, element: IElement): boolean;
+     /**
+      * Check if a node has text children.
+      */
+-    hasTexts(editor: Editor, element: Element): boolean;
++    hasTexts(editor: IEditor, element: IElement): boolean;
+     /**
+      * Insert a block break at the current selection.
+      *
+      * If the selection is currently expanded, it will be deleted first.
+      */
+-    insertBreak(editor: Editor): void;
++    insertBreak(editor: IEditor): void;
+     /**
+      * Insert a fragment at the current selection.
+      *
+      * If the selection is currently expanded, it will be deleted first.
+      */
+-    insertFragment(editor: Editor, fragment: Node[]): void;
++    insertFragment(editor: IEditor, fragment: Node[]): void;
+     /**
+      * Insert a node at the current selection.
+      *
+      * If the selection is currently expanded, it will be deleted first.
+      */
+-    insertNode(editor: Editor, node: Node): void;
++    insertNode(editor: IEditor, node: Node): void;
+     /**
+      * Insert text at the current selection.
+      *
+      * If the selection is currently expanded, it will be deleted first.
+      */
+-    insertText(editor: Editor, text: string): void;
++    insertText(editor: IEditor, text: string): void;
+     /**
+      * Check if a value is a block `Element` object.
+      */
+-    isBlock(editor: Editor, value: any): value is Element;
++    isBlock(editor: IEditor, value: any): value is IElement;
+     /**
+      * Check if a value is an `Editor` object.
+      */
+-    isEditor(value: any): value is Editor;
++    isEditor(value: any): value is IEditor;
+     /**
+      * Check if a point is the end point of a location.
+      */
+-    isEnd(editor: Editor, point: Point, at: Location): boolean;
++    isEnd(editor: IEditor, point: Point, at: Location): boolean;
+     /**
+      * Check if a point is an edge of a location.
+      */
+-    isEdge(editor: Editor, point: Point, at: Location): boolean;
++    isEdge(editor: IEditor, point: Point, at: Location): boolean;
+     /**
+      * Check if an element is empty, accounting for void nodes.
+      */
+-    isEmpty(editor: Editor, element: Element): boolean;
++    isEmpty(editor: IEditor, element: IElement): boolean;
+     /**
+      * Check if a value is an inline `Element` object.
+      */
+-    isInline(editor: Editor, value: any): value is Element;
++    isInline(editor: IEditor, value: any): value is IElement;
+     /**
+      * Check if the editor is currently normalizing after each operation.
+      */
+-    isNormalizing(editor: Editor): boolean;
++    isNormalizing(editor: IEditor): boolean;
+     /**
+      * Check if a point is the start point of a location.
+      */
+-    isStart(editor: Editor, point: Point, at: Location): boolean;
++    isStart(editor: IEditor, point: Point, at: Location): boolean;
+     /**
+      * Check if a value is a void `Element` object.
+      */
+-    isVoid(editor: Editor, value: any): value is Element;
++    isVoid(editor: IEditor, value: any): value is IElement;
+     /**
+      * Get the last node at a location.
+      */
+-    last(editor: Editor, at: Location): NodeEntry<Node>;
++    last(editor: IEditor, at: Location): NodeEntry<Node>;
+     /**
+      * Get the leaf text node at a location.
+      */
+-    leaf(editor: Editor, at: Location, options?: {
++    leaf(editor: IEditor, at: Location, options?: {
+         depth?: number | undefined;
+         edge?: "start" | "end" | undefined;
+-    }): NodeEntry<Text>;
++    }): NodeEntry<IText>;
+     /**
+      * Iterate through all of the levels at a location.
+      */
+-    levels<T_1 extends Node>(editor: Editor, options?: {
++    levels<T_1 extends Node>(editor: IEditor, options?: {
+         at?: Range | Path | Point | undefined;
+         match?: ((node: Node) => boolean) | ((node: Node) => node is T_1) | undefined;
+         reverse?: boolean | undefined;
+@@ -183,11 +183,11 @@ export declare const Editor: {
+     /**
+      * Get the marks that would be added to text at the current selection.
+      */
+-    marks(editor: Editor): Record<string, any> | null;
++    marks(editor: IEditor): Record<string, any> | null;
+     /**
+      * Get the matching node in the branch of the document after a location.
+      */
+-    next<T_2 extends Node>(editor: Editor, options?: {
++    next<T_2 extends Node>(editor: IEditor, options?: {
+         at?: Range | Path | Point | undefined;
+         match?: ((node: Node) => boolean) | ((node: Node) => node is T_2) | undefined;
+         mode?: "highest" | "lowest" | "all" | undefined;
+@@ -196,14 +196,14 @@ export declare const Editor: {
+     /**
+      * Get the node at a location.
+      */
+-    node(editor: Editor, at: Location, options?: {
++    node(editor: IEditor, at: Location, options?: {
+         depth?: number | undefined;
+         edge?: "start" | "end" | undefined;
+     }): NodeEntry<Node>;
+     /**
+      * Iterate through all of the nodes in the Editor.
+      */
+-    nodes<T_3 extends Node>(editor: Editor, options?: {
++    nodes<T_3 extends Node>(editor: IEditor, options?: {
+         at?: Range | Path | Point | Span | undefined;
+         match?: ((node: Node) => boolean) | ((node: Node) => node is T_3) | undefined;
+         mode?: "highest" | "lowest" | "all" | undefined;
+@@ -214,20 +214,20 @@ export declare const Editor: {
+     /**
+      * Normalize any dirty objects in the editor.
+      */
+-    normalize(editor: Editor, options?: {
++    normalize(editor: IEditor, options?: {
+         force?: boolean | undefined;
+     }): void;
+     /**
+      * Get the parent node of a location.
+      */
+-    parent(editor: Editor, at: Location, options?: {
++    parent(editor: IEditor, at: Location, options?: {
+         depth?: number | undefined;
+         edge?: "start" | "end" | undefined;
+     }): NodeEntry<Ancestor>;
+     /**
+      * Get the path of a location.
+      */
+-    path(editor: Editor, at: Location, options?: {
++    path(editor: IEditor, at: Location, options?: {
+         depth?: number | undefined;
+         edge?: "start" | "end" | undefined;
+     }): Path;
+@@ -235,30 +235,30 @@ export declare const Editor: {
+      * Create a mutable ref for a `Path` object, which will stay in sync as new
+      * operations are applied to the editor.
+      */
+-    pathRef(editor: Editor, path: Path, options?: {
++    pathRef(editor: IEditor, path: Path, options?: {
+         affinity?: "backward" | "forward" | null | undefined;
+     }): PathRef;
+     /**
+      * Get the set of currently tracked path refs of the editor.
+      */
+-    pathRefs(editor: Editor): Set<PathRef>;
++    pathRefs(editor: IEditor): Set<PathRef>;
+     /**
+      * Get the start or end point of a location.
+      */
+-    point(editor: Editor, at: Location, options?: {
++    point(editor: IEditor, at: Location, options?: {
+         edge?: "start" | "end" | undefined;
+     }): Point;
+     /**
+      * Create a mutable ref for a `Point` object, which will stay in sync as new
+      * operations are applied to the editor.
+      */
+-    pointRef(editor: Editor, point: Point, options?: {
++    pointRef(editor: IEditor, point: Point, options?: {
+         affinity?: "backward" | "forward" | null | undefined;
+     }): PointRef;
+     /**
+      * Get the set of currently tracked point refs of the editor.
+      */
+-    pointRefs(editor: Editor): Set<PointRef>;
++    pointRefs(editor: IEditor): Set<PointRef>;
+     /**
+      * Iterate through all of the positions in the document where a `Point` can be
+      * placed.
+@@ -270,7 +270,7 @@ export declare const Editor: {
+      * Note: void nodes are treated as a single point, and iteration will not
+      * happen inside their content.
+      */
+-    positions(editor: Editor, options?: {
++    positions(editor: IEditor, options?: {
+         at?: Range | Path | Point | undefined;
+         unit?: "character" | "word" | "line" | "block" | "offset" | undefined;
+         reverse?: boolean | undefined;
+@@ -278,7 +278,7 @@ export declare const Editor: {
+     /**
+      * Get the matching node in the branch of the document before a location.
+      */
+-    previous<T_4 extends Node>(editor: Editor, options?: {
++    previous<T_4 extends Node>(editor: IEditor, options?: {
+         at?: Range | Path | Point | undefined;
+         match?: ((node: Node) => boolean) | ((node: Node) => node is T_4) | undefined;
+         mode?: "highest" | "lowest" | "all" | undefined;
+@@ -287,18 +287,18 @@ export declare const Editor: {
+     /**
+      * Get a range of a location.
+      */
+-    range(editor: Editor, at: Location, to?: Range | Path | Point | undefined): Range;
++    range(editor: IEditor, at: Location, to?: Range | Path | Point | undefined): Range;
+     /**
+      * Create a mutable ref for a `Range` object, which will stay in sync as new
+      * operations are applied to the editor.
+      */
+-    rangeRef(editor: Editor, range: Range, options?: {
++    rangeRef(editor: IEditor, range: Range, options?: {
+         affinity?: "backward" | "forward" | "outward" | "inward" | null | undefined;
+     }): RangeRef;
+     /**
+      * Get the set of currently tracked range refs of the editor.
+      */
+-    rangeRefs(editor: Editor): Set<RangeRef>;
++    rangeRefs(editor: IEditor): Set<RangeRef>;
+     /**
+      * Remove a custom property from all of the leaf text nodes in the current
+      * selection.
+@@ -306,39 +306,39 @@ export declare const Editor: {
+      * If the selection is currently collapsed, the removal will be stored on
+      * `editor.marks` and applied to the text inserted next.
+      */
+-    removeMark(editor: Editor, key: string): void;
++    removeMark(editor: IEditor, key: string): void;
+     /**
+      * Get the start point of a location.
+      */
+-    start(editor: Editor, at: Location): Point;
++    start(editor: IEditor, at: Location): Point;
+     /**
+      * Get the text string content of a location.
+      *
+      * Note: the text of void nodes is presumed to be an empty string, regardless
+      * of what their actual content is.
+      */
+-    string(editor: Editor, at: Location): string;
++    string(editor: IEditor, at: Location): string;
+     /**
+      * Transform the editor by an operation.
+      */
+-    transform(editor: Editor, op: Operation): void;
++    transform(editor: IEditor, op: Operation): void;
+     /**
+      * Convert a range into a non-hanging one.
+      */
+-    unhangRange(editor: Editor, range: Range, options?: {
++    unhangRange(editor: IEditor, range: Range, options?: {
+         voids?: boolean | undefined;
+     }): Range;
+     /**
+      * Match a void node in the current branch of the editor.
+      */
+-    void(editor: Editor, options?: {
++    void(editor: IEditor, options?: {
+         at?: Range | Path | Point | undefined;
+         mode?: "highest" | "lowest" | undefined;
+         voids?: boolean | undefined;
+-    }): NodeEntry<Element> | undefined;
++    }): NodeEntry<IElement> | undefined;
+     /**
+      * Call a function, deferring normalization until after it completes.
+      */
+-    withoutNormalizing(editor: Editor, fn: () => void): void;
++    withoutNormalizing(editor: IEditor, fn: () => void): void;
+ };
+ //# sourceMappingURL=editor.d.ts.map
+\ No newline at end of file
 diff --git a/node_modules/slate/dist/interfaces/element.d.ts b/node_modules/slate/dist/interfaces/element.d.ts
-index 2c6013b..f33341c 100644
+index 2c6013b..c2b59af 100644
 --- a/node_modules/slate/dist/interfaces/element.d.ts
 +++ b/node_modules/slate/dist/interfaces/element.d.ts
-@@ -8,6 +8,10 @@ export interface Element {
+@@ -4,7 +4,7 @@ import { Node, Path } from '..';
+  * element nodes or text nodes. They can be either "blocks" or "inlines"
+  * depending on the Slate editor's configuration.
+  */
+-export interface Element {
++export interface IElement {
      children: Node[];
      [key: string]: unknown;
  }
-+// Run `npm run build-patch` every time you edit this file.
-+interface Element {
-+    type: "paragraph" | "code"
-+}
- export declare const Element: {
+@@ -12,22 +12,22 @@ export declare const Element: {
      /**
       * Check if a value implements the `Element` interface.
+      */
+-    isElement(value: any): value is Element;
++    isElement(value: any): value is IElement;
+     /**
+      * Check if a value is an array of `Element` objects.
+      */
+-    isElementList(value: any): value is Element[];
++    isElementList(value: any): value is IElement[];
+     /**
+      * Check if an element matches set of properties.
+      *
+      * Note: this checks custom properties, and it does not ensure that any
+      * children are equivalent.
+      */
+-    matches(element: Element, props: Partial<Element>): boolean;
++    matches(element: IElement, props: Partial<IElement>): boolean;
+ };
+ /**
+  * `ElementEntry` objects refer to an `Element` and the `Path` where it can be
+  * found inside a root node.
+  */
+-export declare type ElementEntry = [Element, Path];
++export declare type ElementEntry = [IElement, Path];
+ //# sourceMappingURL=element.d.ts.map
+\ No newline at end of file
+diff --git a/node_modules/slate/dist/interfaces/node.d.ts b/node_modules/slate/dist/interfaces/node.d.ts
+index 9597e8a..2addb6a 100644
+--- a/node_modules/slate/dist/interfaces/node.d.ts
++++ b/node_modules/slate/dist/interfaces/node.d.ts
+@@ -1,9 +1,9 @@
+-import { Editor, Element, ElementEntry, Path, Range, Text } from '..';
++import { IEditor, IElement, ElementEntry, Path, Range, IText } from '..';
+ /**
+  * The `Node` union type represents all of the different types of nodes that
+  * occur in a Slate document tree.
+  */
+-export declare type Node = Editor | Element | Text;
++export declare type Node = IEditor | IElement | IText;
+ export declare const Node: {
+     /**
+      * Get the node at a specific path, asserting that it's an ancestor node.
+@@ -88,7 +88,7 @@ export declare const Node: {
+     /**
+      * Get the node at a specific path, ensuring it's a leaf text node.
+      */
+-    leaf(root: Node, path: Path): Text;
++    leaf(root: Node, path: Path): IText;
+     /**
+      * Return an iterable of the in a branch of the tree, from a specific path.
+      *
+@@ -101,7 +101,7 @@ export declare const Node: {
+     /**
+      * Check if a node matches a set of props.
+      */
+-    matches(node: Node, props: Partial<Editor> | Partial<Element> | Partial<Text>): boolean;
++    matches(node: Node, props: Partial<IEditor> | Partial<IElement> | Partial<IText>): boolean;
+     /**
+      * Return an iterable of all the node entries of a root node. Each entry is
+      * returned as a `[Node, Path]` tuple, with the path referring to the node's
+@@ -133,20 +133,20 @@ export declare const Node: {
+         to?: Path | undefined;
+         reverse?: boolean | undefined;
+         pass?: ((node: NodeEntry<Node>) => boolean) | undefined;
+-    }): Iterable<NodeEntry<Text>>;
++    }): Iterable<NodeEntry<IText>>;
+ };
+ /**
+  * The `Descendant` union type represents nodes that are descendants in the
+  * tree. It is returned as a convenience in certain cases to narrow a value
+  * further than the more generic `Node` union.
+  */
+-export declare type Descendant = Element | Text;
++export declare type Descendant = IElement | IText;
+ /**
+  * The `Ancestor` union type represents nodes that are ancestors in the tree.
+  * It is returned as a convenience in certain cases to narrow a value further
+  * than the more generic `Node` union.
+  */
+-export declare type Ancestor = Editor | Element;
++export declare type Ancestor = IEditor | IElement;
+ /**
+  * `NodeEntry` objects are returned when iterating over the nodes in a Slate
+  * document tree. They consist of the node and its `Path` relative to the root
 diff --git a/node_modules/slate/dist/interfaces/text.d.ts b/node_modules/slate/dist/interfaces/text.d.ts
-index 05b6771..d19e3d4 100644
+index 05b6771..e0df03e 100644
 --- a/node_modules/slate/dist/interfaces/text.d.ts
 +++ b/node_modules/slate/dist/interfaces/text.d.ts
-@@ -8,6 +8,10 @@ export interface Text {
+@@ -4,7 +4,7 @@ import { Range } from '..';
+  * Slate document along with any formatting properties. They are always leaf
+  * nodes in the document tree as they cannot contain any children.
+  */
+-export interface Text {
++export interface IText {
      text: string;
      [key: string]: unknown;
  }
-+// Run `npm run build-patch` every time you edit this file.
-+interface Text {
-+    bold?: string
-+}
- export declare const Text: {
+@@ -12,27 +12,27 @@ export declare const Text: {
      /**
       * Check if two text nodes are equal.
+      */
+-    equals(text: Text, another: Text, options?: {
++    equals(text: IText, another: IText, options?: {
+         loose?: boolean | undefined;
+     }): boolean;
+     /**
+      * Check if a value implements the `Text` interface.
+      */
+-    isText(value: any): value is Text;
++    isText(value: any): value is IText;
+     /**
+      * Check if a value is a list of `Text` objects.
+      */
+-    isTextList(value: any): value is Text[];
++    isTextList(value: any): value is IText[];
+     /**
+      * Check if an text matches set of properties.
+      *
+      * Note: this is for matching custom properties, and it does not ensure that
+      * the `text` property are two nodes equal.
+      */
+-    matches(text: Text, props: Partial<Text>): boolean;
++    matches(text: IText, props: Partial<IText>): boolean;
+     /**
+      * Get the leaves for a text node given decorations.
+      */
+-    decorations(node: Text, decorations: Range[]): Text[];
++    decorations(node: IText, decorations: Range[]): IText[];
+ };
+ //# sourceMappingURL=text.d.ts.map
+\ No newline at end of file
+diff --git a/node_modules/slate/dist/transforms/index.d.ts b/node_modules/slate/dist/transforms/index.d.ts
+index 50615a8..a2bfb9b 100644
+--- a/node_modules/slate/dist/transforms/index.d.ts
++++ b/node_modules/slate/dist/transforms/index.d.ts
+@@ -1,5 +1,5 @@
+ export declare const Transforms: {
+-    delete(editor: import("..").Editor, options?: {
++    delete(editor: import("..").IEditor, options?: {
+         at?: import("..").Path | import("..").Point | import("..").Range | undefined;
+         distance?: number | undefined;
+         unit?: "character" | "word" | "line" | "block" | undefined;
+@@ -7,31 +7,31 @@ export declare const Transforms: {
+         hanging?: boolean | undefined;
+         voids?: boolean | undefined;
+     }): void;
+-    insertFragment(editor: import("..").Editor, fragment: import("..").Node[], options?: {
++    insertFragment(editor: import("..").IEditor, fragment: import("..").Node[], options?: {
+         at?: import("..").Path | import("..").Point | import("..").Range | undefined;
+         hanging?: boolean | undefined;
+         voids?: boolean | undefined;
+     }): void;
+-    insertText(editor: import("..").Editor, text: string, options?: {
++    insertText(editor: import("..").IEditor, text: string, options?: {
+         at?: import("..").Path | import("..").Point | import("..").Range | undefined;
+         voids?: boolean | undefined;
+     }): void;
+-    collapse(editor: import("..").Editor, options?: {
++    collapse(editor: import("..").IEditor, options?: {
+         edge?: "anchor" | "focus" | "start" | "end" | undefined;
+     }): void;
+-    deselect(editor: import("..").Editor): void;
+-    move(editor: import("..").Editor, options?: {
++    deselect(editor: import("..").IEditor): void;
++    move(editor: import("..").IEditor, options?: {
+         distance?: number | undefined;
+         unit?: "offset" | "character" | "word" | "line" | undefined;
+         reverse?: boolean | undefined;
+         edge?: "anchor" | "focus" | "start" | "end" | undefined;
+     }): void;
+-    select(editor: import("..").Editor, target: import("..").Location): void;
+-    setPoint(editor: import("..").Editor, props: Partial<import("..").Point>, options: {
++    select(editor: import("..").IEditor, target: import("..").Location): void;
++    setPoint(editor: import("..").IEditor, props: Partial<import("..").Point>, options: {
+         edge?: "anchor" | "focus" | "start" | "end" | undefined;
+     }): void;
+-    setSelection(editor: import("..").Editor, props: Partial<import("..").Range>): void;
+-    insertNodes(editor: import("..").Editor, nodes: import("..").Editor | import("..").Element | import("..").Text | import("..").Node[], options?: {
++    setSelection(editor: import("..").IEditor, props: Partial<import("..").Range>): void;
++    insertNodes(editor: import("..").IEditor, nodes: import("..").IEditor | import("..").IElement | import("..").IText | import("..").Node[], options?: {
+         at?: import("..").Path | import("..").Point | import("..").Range | undefined;
+         match?: ((node: import("..").Node) => boolean) | undefined;
+         mode?: "highest" | "lowest" | undefined;
+@@ -39,34 +39,34 @@ export declare const Transforms: {
+         select?: boolean | undefined;
+         voids?: boolean | undefined;
+     }): void;
+-    liftNodes(editor: import("..").Editor, options?: {
++    liftNodes(editor: import("..").IEditor, options?: {
+         at?: import("..").Path | import("..").Point | import("..").Range | undefined;
+         match?: ((node: import("..").Node) => boolean) | undefined;
+         mode?: "highest" | "lowest" | "all" | undefined;
+         voids?: boolean | undefined;
+     }): void;
+-    mergeNodes(editor: import("..").Editor, options?: {
++    mergeNodes(editor: import("..").IEditor, options?: {
+         at?: import("..").Path | import("..").Point | import("..").Range | undefined;
+         match?: ((node: import("..").Node) => boolean) | undefined;
+         mode?: "highest" | "lowest" | undefined;
+         hanging?: boolean | undefined;
+         voids?: boolean | undefined;
+     }): void;
+-    moveNodes(editor: import("..").Editor, options: {
++    moveNodes(editor: import("..").IEditor, options: {
+         at?: import("..").Path | import("..").Point | import("..").Range | undefined;
+         match?: ((node: import("..").Node) => boolean) | undefined;
+         mode?: "highest" | "lowest" | "all" | undefined;
+         to: import("..").Path;
+         voids?: boolean | undefined;
+     }): void;
+-    removeNodes(editor: import("..").Editor, options?: {
++    removeNodes(editor: import("..").IEditor, options?: {
+         at?: import("..").Path | import("..").Point | import("..").Range | undefined;
+         match?: ((node: import("..").Node) => boolean) | undefined;
+         mode?: "highest" | "lowest" | undefined;
+         hanging?: boolean | undefined;
+         voids?: boolean | undefined;
+     }): void;
+-    setNodes(editor: import("..").Editor, props: Partial<import("..").Editor> | Partial<import("..").Element> | Partial<import("..").Text>, options?: {
++    setNodes(editor: import("..").IEditor, props: Partial<import("..").IEditor> | Partial<import("..").IElement> | Partial<import("..").IText>, options?: {
+         at?: import("..").Path | import("..").Point | import("..").Range | undefined;
+         match?: ((node: import("..").Node) => boolean) | undefined;
+         mode?: "highest" | "lowest" | "all" | undefined;
+@@ -74,7 +74,7 @@ export declare const Transforms: {
+         split?: boolean | undefined;
+         voids?: boolean | undefined;
+     }): void;
+-    splitNodes(editor: import("..").Editor, options?: {
++    splitNodes(editor: import("..").IEditor, options?: {
+         at?: import("..").Path | import("..").Point | import("..").Range | undefined;
+         match?: ((node: import("..").Node) => boolean) | undefined;
+         mode?: "highest" | "lowest" | undefined;
+@@ -82,27 +82,27 @@ export declare const Transforms: {
+         height?: number | undefined;
+         voids?: boolean | undefined;
+     }): void;
+-    unsetNodes(editor: import("..").Editor, props: string | string[], options?: {
++    unsetNodes(editor: import("..").IEditor, props: string | string[], options?: {
+         at?: import("..").Path | import("..").Point | import("..").Range | undefined;
+         match?: ((node: import("..").Node) => boolean) | undefined;
+         mode?: "highest" | "lowest" | "all" | undefined;
+         split?: boolean | undefined;
+         voids?: boolean | undefined;
+     }): void;
+-    unwrapNodes(editor: import("..").Editor, options: {
++    unwrapNodes(editor: import("..").IEditor, options: {
+         at?: import("..").Path | import("..").Point | import("..").Range | undefined;
+         match?: ((node: import("..").Node) => boolean) | undefined;
+         mode?: "highest" | "lowest" | "all" | undefined;
+         split?: boolean | undefined;
+         voids?: boolean | undefined;
+     }): void;
+-    wrapNodes(editor: import("..").Editor, element: import("..").Element, options?: {
++    wrapNodes(editor: import("..").IEditor, element: import("..").IElement, options?: {
+         at?: import("..").Path | import("..").Point | import("..").Range | undefined;
+         match?: ((node: import("..").Node) => boolean) | undefined;
+         mode?: "highest" | "lowest" | "all" | undefined;
+         split?: boolean | undefined;
+         voids?: boolean | undefined;
+     }): void;
+-    transform(editor: import("..").Editor, op: import("..").Operation): void;
++    transform(editor: import("..").IEditor, op: import("..").Operation): void;
+ };
+ //# sourceMappingURL=index.d.ts.map
+\ No newline at end of file

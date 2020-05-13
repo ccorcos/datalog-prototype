@@ -5,7 +5,15 @@
 */
 
 import React, { useMemo, useState } from "react"
-import { createEditor, Node, Editor, Element, Text, Transforms } from "slate"
+import {
+	createEditor,
+	Node,
+	IEditor,
+	Editor,
+	Element,
+	Text,
+	Transforms,
+} from "slate"
 import {
 	Slate,
 	Editable,
@@ -39,11 +47,45 @@ Todo:
 
 */
 
+declare module "slate" {
+	interface IText {
+		bold?: string
+	}
+	interface IEditor {
+		bold: ReturnType<typeof createBoldInterface>
+	}
+}
+
+function createBoldInterface(editor: IEditor) {
+	return {
+		isActive() {
+			const [match] = Editor.nodes(editor, {
+				match: (n) => n.bold === true,
+				universal: true,
+			})
+			return !!match
+		},
+		toggle() {
+			const isActive = editor.bold.isActive()
+			Transforms.setNodes(
+				editor,
+				{ bold: isActive ? null : true },
+				{ match: (n) => Text.isText(n), split: true }
+			)
+		},
+	}
+}
+
+function withBold(editor: IEditor) {
+	editor.bold = createBoldInterface(editor)
+	return editor
+}
+
 // HERE:
 // - Separate into code module.
 // - Extend Editor helpers and Element type.
 // https://github.com/ianstormtaylor/slate/issues/3680
-function isCodeBlockActive(editor: Editor) {
+function isCodeBlockActive(editor: IEditor) {
 	const [match] = Editor.nodes(editor, {
 		match: (n) => Element.isElement(n) && n.type === "code",
 	})
@@ -51,7 +93,7 @@ function isCodeBlockActive(editor: Editor) {
 	return !!match
 }
 
-function toggleCodeBlock(editor: Editor) {
+function toggleCodeBlock(editor: IEditor) {
 	const isActive = isCodeBlockActive(editor)
 	Transforms.setNodes(
 		editor,
@@ -60,26 +102,8 @@ function toggleCodeBlock(editor: Editor) {
 	)
 }
 
-function isBoldMarkActive(editor: Editor) {
-	const [match] = Editor.nodes(editor, {
-		match: (n) => n.bold === true,
-		universal: true,
-	})
-
-	return !!match
-}
-
-function toggleBoldMark(editor: Editor) {
-	const isActive = isBoldMarkActive(editor)
-	Transforms.setNodes(
-		editor,
-		{ bold: isActive ? null : true },
-		{ match: (n) => Text.isText(n), split: true }
-	)
-}
-
 export function MyEditor() {
-	const editor = useMemo(() => withReact(createEditor()), [])
+	const editor = useMemo(() => withReact(withBold(createEditor())), [])
 
 	const [value, setValue] = useState<Array<Node>>([
 		{
@@ -94,7 +118,8 @@ export function MyEditor() {
 			toggleCodeBlock(editor)
 		} else if (isHotkey("mod+b", event.nativeEvent)) {
 			event.preventDefault()
-			toggleBoldMark(editor)
+			editor.bold.toggle()
+			// toggleBoldMark(editor)
 		}
 	}, [])
 
