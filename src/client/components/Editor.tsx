@@ -50,10 +50,16 @@ Todo:
 declare module "slate" {
 	interface IText {
 		bold?: string
+		// italics, strikethrough, code, link
 	}
 
 	interface IElement {
 		type: "paragraph" | "code"
+		// bulleted list, numbered list, h1, h2, h3, h4
+		// embed, image, column, table,
+		// inline math
+		// variables and formulas
+		// nested page, tag, mention
 	}
 }
 
