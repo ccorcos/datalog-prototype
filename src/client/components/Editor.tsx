@@ -20,7 +20,8 @@ Todo:
 - [x] basic blocks
 - [x] basic annotations
 - [x] types
-	- [ ] file a typescript issue
+	- [x] file a typescript issue
+				https://github.com/ianstormtaylor/slate/issues/3680
 - [ ] markdown autocomplete basics
 - command prompt
 - polish
@@ -38,6 +39,10 @@ Todo:
 
 */
 
+// HERE:
+// - Separate into code module.
+// - Extend Editor helpers and Element type.
+// https://github.com/ianstormtaylor/slate/issues/3680
 function isCodeBlockActive(editor: Editor) {
 	const [match] = Editor.nodes(editor, {
 		match: (n) => Element.isElement(n) && n.type === "code",
