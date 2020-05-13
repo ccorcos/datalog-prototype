@@ -17,13 +17,24 @@ import isHotkey from "is-hotkey"
 
 /*
 Todo:
-- basic blocks
-- basic annotations
-- types
-- markdown autocomplete
-- linkify
-- arrow complete ->
+- [x] basic blocks
+- [x] basic annotations
+- [x] types
+	- [ ] file a typescript issue
+- [ ] markdown autocomplete basics
+- command prompt
+- polish
+	- linkify
+	- arrow complete ->
+	- more block types
+	- more annotations
+	- more markdown completions
+	- keyboard option+up blocks
+	- tags + tag completion
+- images
+- simple embeds
 - nested page
+- block selection outside of slate?
 
 */
 
