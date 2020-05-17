@@ -30,15 +30,17 @@ Todo:
 - [x] better types and generalization
 - [x] toggle bold with collapsed selection check.
 - [x] toolbar for block types and annotations.
-	- [ ] popups for keyboard shortcuts.
 
+- [x] list-item coersion
+- [ ] markdown autocomplete basics
+	- [ ] undo to leave it alone.
+
+- [ ] popups for keyboard shortcuts.
 - [ ] text selection from the gutters.
 - [ ] code block internal newlines
 - [ ] bulleted list logic.
 
 - [ ] inline code should be an inline element.
-
-- [ ] markdown autocomplete basics
 
 - [ ] load and persist to database
 - [ ] nested pages
@@ -77,11 +79,16 @@ interface QuoteElement {
 
 interface BulletedListElement {
 	type: "bulleted-list"
-	children: Array<InlineElement | TextMarkup>
+	children: Array<ListItemElement>
 }
 
 interface NumberedListElement {
 	type: "numbered-list"
+	children: Array<ListItemElement>
+}
+
+interface ListItemElement {
+	type: "list-item"
 	children: Array<InlineElement | TextMarkup>
 }
 
@@ -109,18 +116,26 @@ type BlockElement =
 	| HeadingOneElement
 	| HeadingTwoElement
 	| HeadingThreeElement
+	| ListItemElement
+
 type BlockType = BlockElement["type"]
 
 const blockTypes = unionTypeValues<BlockType>({
 	paragraph: true,
+	"heading-one": true,
+	"heading-two": true,
+	"heading-three": true,
 	code: true,
 	quote: true,
 	"bulleted-list": true,
 	"numbered-list": true,
-	"heading-one": true,
-	"heading-two": true,
-	"heading-three": true,
+	"list-item": true,
 })
+
+const listTypes: Partial<Record<BlockType, true>> = {
+	"bulleted-list": true,
+	"numbered-list": true,
+}
 
 interface LinkElement {
 	type: "url"
@@ -173,11 +188,32 @@ function isBlockTypeInSelection(editor: Editor, type: BlockType) {
 }
 
 function transformSelectedBlocks(editor: Editor, type: BlockType) {
-	Transforms.setNodes(
-		editor,
-		{ type: type },
-		{ match: (n) => Editor.isBlock(editor, n) }
-	)
+	if (listTypes[type]) {
+		// Turn blocks into list items, wrap into a list.
+		Transforms.setNodes(
+			editor,
+			{ type: "list-item" },
+			{ match: (n) => Editor.isBlock(editor, n) }
+		)
+		Transforms.wrapNodes(
+			editor,
+			{ type, children: [] },
+			{
+				match: (n) => n.type === "list-item",
+			}
+		)
+	} else {
+		// Unwrap any lists that we're deleting.
+		Transforms.unwrapNodes(editor, {
+			match: (n) => Boolean(listTypes[n.type as BlockType]),
+			split: true,
+		})
+		Transforms.setNodes(
+			editor,
+			{ type: type },
+			{ match: (n) => Editor.isBlock(editor, n) }
+		)
+	}
 }
 
 function toggleSelectedBlocks(
@@ -244,11 +280,19 @@ const textAnnotationHotkeys: Record<TextAnnotation, string> = {
 }
 
 // ============================================================================
+// Shortcuts.
+// ============================================================================
+
+function withShortcuts(editor: ReactEditor) {
+	return editor
+}
+
+// ============================================================================
 // Editor.
 // ============================================================================
 
 export function MyEditor() {
-	const editor = useMemo(() => withReact(createEditor()), [])
+	const editor = useMemo(() => withShortcuts(withReact(createEditor())), [])
 
 	const [value, setValue] = useState<Array<Node>>([
 		{
@@ -258,15 +302,20 @@ export function MyEditor() {
 	])
 
 	const handleKeyDown = React.useCallback((event: React.KeyboardEvent) => {
+		// Soft break for code blocks
+		if (event.key === "Enter") {
+			// TODO: really just if the selection starts in a code block.
+			if (isBlockTypeInSelection(editor, "code")) {
+				event.preventDefault()
+				Editor.insertText(editor, "\n")
+			}
+		}
+
+		// Text annotation shortcuts.
 		for (const [annotation, hotkey] of objectEntries(textAnnotationHotkeys)) {
 			if (isHotkey(hotkey, event.nativeEvent)) {
 				toggleSelectedTextAnnotation(editor, annotation)
 			}
-		}
-
-		if (isHotkey("mod+e", event.nativeEvent)) {
-			event.preventDefault()
-			toggleSelectedBlocks(editor, "code")
 		}
 	}, [])
 
@@ -373,6 +422,10 @@ function NumberedListElement(props: RenderElementProps) {
 	return <ol {...props.attributes}>{props.children}</ol>
 }
 
+function ListItemElement(props: RenderElementProps) {
+	return <li {...props.attributes}>{props.children}</li>
+}
+
 function HeadingOneElement(props: RenderElementProps) {
 	return <h1 {...props.attributes}>{props.children}</h1>
 }
@@ -394,6 +447,7 @@ const blockElementRenderers: Record<
 	quote: QuoteElement,
 	"bulleted-list": BulletedListElement,
 	"numbered-list": NumberedListElement,
+	"list-item": ListItemElement,
 	"heading-one": HeadingOneElement,
 	"heading-two": HeadingTwoElement,
 	"heading-three": HeadingThreeElement,
