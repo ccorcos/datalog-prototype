@@ -11,6 +11,7 @@ import {
 	IEditor,
 	Editor,
 	Element,
+	IElement,
 	Text,
 	Transforms,
 } from "slate"
@@ -31,7 +32,7 @@ Todo:
 	- [x] file a typescript issue
 				https://github.com/ianstormtaylor/slate/issues/3680
 - [ ] markdown autocomplete basics
-- command prompt
+- [ ] command prompt
 - polish
 	- linkify
 	- arrow complete ->
@@ -47,19 +48,29 @@ Todo:
 
 */
 
+type ElementType = "paragraph" | "code"
+
+type TextAnnotations = {
+	bold?: boolean
+	italic?: boolean
+	strike?: boolean
+	code?: boolean
+	link?: string
+}
+
+// bulleted list, numbered list, h1, h2, h3, h4
+// embed, image, column, table,
+// inline math
+// variables and formulas
+// nested page, tag, mention
+
 declare module "slate" {
 	interface IText {
-		bold?: string
-		// italics, strikethrough, code, link
+		bold?: boolean
 	}
 
 	interface IElement {
-		type: "paragraph" | "code"
-		// bulleted list, numbered list, h1, h2, h3, h4
-		// embed, image, column, table,
-		// inline math
-		// variables and formulas
-		// nested page, tag, mention
+		type: ElementType
 	}
 }
 
@@ -67,22 +78,42 @@ declare module "slate" {
 // - Separate into code module.
 // - Extend Editor helpers and Element type.
 // https://github.com/ianstormtaylor/slate/issues/3680
-function isCodeBlockActive(editor: IEditor) {
-	const [match] = Editor.nodes(editor, {
-		match: (n) => Element.isElement(n) && n.type === "code",
-	})
 
-	return !!match
+// ============================================================================
+// Element Helpers.
+// ============================================================================
+
+function isSelectionElementType(editor: IEditor, type: IElement["type"]) {
+	const [match] = Editor.nodes(editor, {
+		match: (n) => Element.isElement(n) && n.type === type,
+	})
+	return Boolean(match)
 }
 
-function toggleCodeBlock(editor: IEditor) {
-	const isActive = isCodeBlockActive(editor)
+function setSelectionElementType(editor: IEditor, type: IElement["type"]) {
 	Transforms.setNodes(
 		editor,
-		{ type: isActive ? null : "code" },
+		{ type: type },
 		{ match: (n) => Editor.isBlock(editor, n) }
 	)
 }
+
+function toggleSelectionElementType(
+	editor: IEditor,
+	type: IElement["type"],
+	fallback: IElement["type"] = "paragraph"
+) {
+	const isActive = isSelectionElementType(editor, type)
+	if (isActive) {
+		setSelectionElementType(editor, fallback)
+	} else {
+		setSelectionElementType(editor, type)
+	}
+}
+
+// ============================================================================
+// Text Helpers.
+// ============================================================================
 
 function isBoldMarkActive(editor: IEditor) {
 	const [match] = Editor.nodes(editor, {
@@ -115,7 +146,7 @@ export function MyEditor() {
 	const handleKeyDown = React.useCallback((event: React.KeyboardEvent) => {
 		if (isHotkey("mod+e", event.nativeEvent)) {
 			event.preventDefault()
-			toggleCodeBlock(editor)
+			toggleSelectionElementType(editor, "code")
 		} else if (isHotkey("mod+b", event.nativeEvent)) {
 			event.preventDefault()
 			toggleBoldMark(editor)
