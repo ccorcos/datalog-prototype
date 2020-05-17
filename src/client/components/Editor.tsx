@@ -14,6 +14,7 @@ import {
 	Text,
 	Transforms,
 	Range,
+	Point,
 } from "slate"
 import {
 	Slate,
@@ -46,7 +47,7 @@ Todo:
 - [x] list-item coersion
 - [x] reset paragraph on enter block types.
 
-- [ ] markdown autocomplete basics
+- [x] markdown autocomplete basics
 	- [ ] undo to leave it alone.
 
 - [ ] popups for keyboard shortcuts.
@@ -298,12 +299,11 @@ const textAnnotationHotkeys: Record<TextAnnotation, string> = {
 }
 
 // ============================================================================
-// Shortcuts.
+// Custom Extensions.
 // ============================================================================
 
-function withShortcuts(editor: ReactEditor) {
+function withExtensions(editor: ReactEditor) {
 	const { insertBreak } = editor
-
 	editor.insertBreak = () => {
 		// TODO: really just if the selection starts in a code block.
 		if (isBlockTypeInSelection(editor, "code")) {
@@ -322,6 +322,52 @@ function withShortcuts(editor: ReactEditor) {
 			}
 		}
 	}
+
+	const { insertText } = editor
+	editor.insertText = (text) => {
+		// Autocomplete dash into bulleted list.
+		if (editor.selection && Range.isCollapsed(editor.selection)) {
+			// TODO: we want to make sure we're transforming the correct block types.
+			const block = Editor.above(editor, {
+				match: (n) => Editor.isBlock(editor, n),
+			})
+			const path = block ? block[1] : []
+			const start = Editor.start(editor, path)
+			const range = { anchor: editor.selection.anchor, focus: start }
+			const beforeText = Editor.string(editor, range)
+			if (beforeText === "-") {
+				Transforms.select(editor, range)
+				Transforms.delete(editor)
+				transformSelectedBlocks(editor, "bulleted-list")
+				return
+			}
+		}
+
+		insertText(text)
+	}
+
+	const { deleteBackward } = editor
+	editor.deleteBackward = (unit) => {
+		if (editor.selection && Range.isCollapsed(editor.selection)) {
+			const match = Editor.above(editor, {
+				match: (n) => Editor.isBlock(editor, n),
+			})
+			if (match) {
+				const [block, path] = match
+				const start = Editor.start(editor, path)
+
+				if (
+					block.type !== "paragraph" &&
+					Point.equals(editor.selection.anchor, start)
+				) {
+					transformSelectedBlocks(editor, "paragraph")
+					return
+				}
+			}
+		}
+		deleteBackward(unit)
+	}
+
 	return editor
 }
 
@@ -330,7 +376,7 @@ function withShortcuts(editor: ReactEditor) {
 // ============================================================================
 
 export function MyEditor() {
-	const editor = useMemo(() => withShortcuts(withReact(createEditor())), [])
+	const editor = useMemo(() => withExtensions(withReact(createEditor())), [])
 
 	const [value, setValue] = useState<Array<Node>>([
 		{
