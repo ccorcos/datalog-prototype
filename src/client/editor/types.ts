@@ -76,7 +76,7 @@ interface TagElement {
 }
 type InlineElement = LinkElement | TagElement
 
-type TextValue = {
+export type TextValue = {
 	text: string
 	bold?: boolean
 	italic?: boolean

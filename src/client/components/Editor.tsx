@@ -4,17 +4,8 @@
 
 */
 
-import React, { useMemo, useState } from "react"
-import {
-	createEditor,
-	Node,
-	IEditor,
-	Editor,
-	Element,
-	IElement,
-	Text,
-	Transforms,
-} from "slate"
+import React, { useMemo, useState, CSSProperties } from "react"
+import { createEditor, Node, Editor, Element, Text, Transforms } from "slate"
 import {
 	Slate,
 	Editable,
@@ -23,6 +14,7 @@ import {
 	RenderLeafProps,
 } from "slate-react"
 import isHotkey from "is-hotkey"
+import { unionTypeValues, objectEntries } from "../../shared/typeUtils"
 
 /*
 Todo:
@@ -31,7 +23,20 @@ Todo:
 - [x] types
 	- [x] file a typescript issue
 				https://github.com/ianstormtaylor/slate/issues/3680
+
+- [x] better types and generalization
+- [ ] toggle bold with collapsed selection check.
+- [ ] inline code should be an inline element.
+
+- [ ] toolbar for block types and annotations.
+	- [ ] popups for keyboard shortcuts.
+
 - [ ] markdown autocomplete basics
+
+- [ ] load and persist to database
+- [ ] nested pages
+
+
 - [ ] command prompt
 - polish
 	- linkify
@@ -48,49 +53,119 @@ Todo:
 
 */
 
-type ElementType = "paragraph" | "code"
+interface ParagraphElement {
+	type: "paragraph"
+	children: Array<InlineElement | TextMarkup>
+}
 
-type TextAnnotations = {
+interface CodeElement {
+	type: "code"
+	children: Array<InlineElement | TextMarkup>
+}
+
+interface QuoteElement {
+	type: "quote"
+	children: Array<InlineElement | TextMarkup>
+}
+
+interface BulletedListElement {
+	type: "bulleted-list"
+	children: Array<InlineElement | TextMarkup>
+}
+
+interface NumberedListElement {
+	type: "numbered-list"
+	children: Array<InlineElement | TextMarkup>
+}
+
+interface HeadingOneElement {
+	type: "heading-one"
+	children: Array<InlineElement | TextMarkup>
+}
+
+interface HeadingTwoElement {
+	type: "heading-two"
+	children: Array<InlineElement | TextMarkup>
+}
+
+interface HeadingThreeElement {
+	type: "heading-Three"
+	children: Array<InlineElement | TextMarkup>
+}
+
+type BlockElement =
+	| ParagraphElement
+	| CodeElement
+	| QuoteElement
+	| BulletedListElement
+	| NumberedListElement
+	| HeadingOneElement
+	| HeadingTwoElement
+	| HeadingThreeElement
+type BlockType = BlockElement["type"]
+
+const blockTypes = unionTypeValues<BlockType>({
+	paragraph: true,
+	code: true,
+	quote: true,
+	"bulleted-list": true,
+	"numbered-list": true,
+	"heading-one": true,
+	"heading-two": true,
+	"heading-Three": true,
+})
+
+interface LinkElement {
+	type: "url"
+	url: string
+	children: Array<TextMarkup>
+}
+
+interface TagElement {
+	type: "tag"
+	tag: string
+	children: Array<TextMarkup>
+}
+
+type InlineElement = LinkElement | TagElement
+
+type InlineType = InlineElement["type"]
+
+const inlineTypes = unionTypeValues<InlineType>({
+	url: true,
+	tag: true,
+})
+
+type TextMarkup = {
+	text: string
 	bold?: boolean
 	italic?: boolean
 	strike?: boolean
 	code?: boolean
-	link?: string
+	// underline, overline
 }
 
-// bulleted list, numbered list, h1, h2, h3, h4
-// embed, image, column, table,
-// inline math
-// variables and formulas
-// nested page, tag, mention
+type TextAnnotation = keyof Omit<TextMarkup, "text">
 
-declare module "slate" {
-	interface IText {
-		bold?: boolean
-	}
-
-	interface IElement {
-		type: ElementType
-	}
-}
-
-// HERE:
-// - Separate into code module.
-// - Extend Editor helpers and Element type.
-// https://github.com/ianstormtaylor/slate/issues/3680
+const textAnnotations = unionTypeValues<TextAnnotation>({
+	bold: true,
+	italic: true,
+	strike: true,
+	code: true,
+})
 
 // ============================================================================
-// Element Helpers.
+// Block Helpers.
 // ============================================================================
 
-function isSelectionElementType(editor: IEditor, type: IElement["type"]) {
+function isBlockTypeInSelection(editor: Editor, type: BlockType) {
 	const [match] = Editor.nodes(editor, {
 		match: (n) => Element.isElement(n) && n.type === type,
 	})
 	return Boolean(match)
 }
 
-function setSelectionElementType(editor: IEditor, type: IElement["type"]) {
+function transformSelectedBlocks(editor: Editor, type: BlockType) {
 	Transforms.setNodes(
 		editor,
 		{ type: type },
@@ -98,16 +173,16 @@ function setSelectionElementType(editor: IEditor, type: IElement["type"]) {
 	)
 }
 
-function toggleSelectionElementType(
-	editor: IEditor,
-	type: IElement["type"],
-	fallback: IElement["type"] = "paragraph"
+function toggleSelectedBlocks(
+	editor: Editor,
+	type: BlockType,
+	fallback: BlockType = "paragraph"
 ) {
-	const isActive = isSelectionElementType(editor, type)
+	const isActive = isBlockTypeInSelection(editor, type)
 	if (isActive) {
-		setSelectionElementType(editor, fallback)
+		transformSelectedBlocks(editor, fallback)
 	} else {
-		setSelectionElementType(editor, type)
+		transformSelectedBlocks(editor, type)
 	}
 }
 
@@ -115,23 +190,49 @@ function toggleSelectionElementType(
 // Text Helpers.
 // ============================================================================
 
-function isBoldMarkActive(editor: IEditor) {
+function isAnnotationInSelection(editor: Editor, annotation: TextAnnotation) {
 	const [match] = Editor.nodes(editor, {
-		match: (n) => n.bold === true,
+		match: (n) => n[annotation] === true,
 		universal: true,
 	})
-
-	return !!match
+	console.log("isAnnotationInSelection", annotation, match)
+	return Boolean(match)
 }
 
-function toggleBoldMark(editor: IEditor) {
-	const isActive = isBoldMarkActive(editor)
+function setSelectedTextAnnotation(
+	editor: Editor,
+	annotation: TextAnnotation,
+	on: boolean
+) {
 	Transforms.setNodes(
 		editor,
-		{ bold: isActive ? null : true },
+		{ [annotation]: on ? true : undefined },
 		{ match: (n) => Text.isText(n), split: true }
 	)
 }
+
+function toggleSelectedTextAnnotation(
+	editor: Editor,
+	annotation: TextAnnotation
+) {
+	const isActive = isAnnotationInSelection(editor, annotation)
+	if (isActive) {
+		setSelectedTextAnnotation(editor, annotation, false)
+	} else {
+		setSelectedTextAnnotation(editor, annotation, true)
+	}
+}
+
+const textAnnotationHotkeys: Record<TextAnnotation, string> = {
+	bold: "mod+b",
+	italic: "mod+i",
+	strike: "mod+shift+s",
+	code: "mod+e",
+}
+
+// ============================================================================
+// Editor.
+// ============================================================================
 
 export function MyEditor() {
 	const editor = useMemo(() => withReact(createEditor()), [])
@@ -144,12 +245,15 @@ export function MyEditor() {
 	])
 
 	const handleKeyDown = React.useCallback((event: React.KeyboardEvent) => {
+		for (const [annotation, hotkey] of objectEntries(textAnnotationHotkeys)) {
+			if (isHotkey(hotkey, event.nativeEvent)) {
+				toggleSelectedTextAnnotation(editor, annotation)
+			}
+		}
+
 		if (isHotkey("mod+e", event.nativeEvent)) {
 			event.preventDefault()
-			toggleSelectionElementType(editor, "code")
-		} else if (isHotkey("mod+b", event.nativeEvent)) {
-			event.preventDefault()
-			toggleBoldMark(editor)
+			toggleSelectedBlocks(editor, "code")
 		}
 	}, [])
 
@@ -185,10 +289,28 @@ function renderElement(props: RenderElementProps) {
 	}
 }
 
+const textAnnotationStyles: Record<TextAnnotation, CSSProperties> = {
+	bold: { fontWeight: "bold" },
+	italic: { fontStyle: "italic" },
+	strike: { textDecoration: "line-through" },
+	code: {
+		fontFamily: `"SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace`,
+		background: "rgba(135,131,120,0.15)",
+		color: "#EB5757",
+		borderRadius: 3,
+		fontSize: "0.85em",
+		padding: "0.2em 0.4em",
+	},
+}
+
 function renderLeaf(props: RenderLeafProps) {
 	let style: React.CSSProperties = {}
-	if (props.leaf.bold) {
-		style.fontWeight = "bold"
+	for (const [annotation, annotationStyle] of objectEntries(
+		textAnnotationStyles
+	)) {
+		if (props.leaf[annotation]) {
+			Object.assign(style, annotationStyle)
+		}
 	}
 	return (
 		<span {...props.attributes} style={style}>
