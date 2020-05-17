@@ -22,3 +22,7 @@ export function objectEntries<T>(
 ): Array<{ [K in keyof T]: [K, T[K]] }[keyof T]> {
 	return Object.entries(obj) as any
 }
+
+export function objectKeys<T>(obj: T): Array<keyof T> {
+	return Object.keys(obj) as any
+}

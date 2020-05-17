@@ -6,7 +6,15 @@
 
 import * as _ from "lodash"
 import React, { useMemo, useState, CSSProperties, useCallback } from "react"
-import { createEditor, Node, Editor, Element, Text, Transforms } from "slate"
+import {
+	createEditor,
+	Node,
+	Editor,
+	Element,
+	Text,
+	Transforms,
+	Range,
+} from "slate"
 import {
 	Slate,
 	Editable,
@@ -17,7 +25,11 @@ import {
 	ReactEditor,
 } from "slate-react"
 import isHotkey from "is-hotkey"
-import { unionTypeValues, objectEntries } from "../../shared/typeUtils"
+import {
+	unionTypeValues,
+	objectEntries,
+	objectKeys,
+} from "../../shared/typeUtils"
 
 /*
 Todo:
@@ -32,6 +44,8 @@ Todo:
 - [x] toolbar for block types and annotations.
 
 - [x] list-item coersion
+- [x] reset paragraph on enter block types.
+
 - [ ] markdown autocomplete basics
 	- [ ] undo to leave it alone.
 
@@ -137,6 +151,14 @@ const listTypes: Partial<Record<BlockType, true>> = {
 	"numbered-list": true,
 }
 
+const resetBlockTypes: Partial<Record<BlockType, true>> = {
+	"heading-one": true,
+	"heading-two": true,
+	"heading-three": true,
+	code: true,
+	quote: true,
+}
+
 interface LinkElement {
 	type: "url"
 	url: string
@@ -233,10 +255,6 @@ function toggleSelectedBlocks(
 // Text Helpers.
 // ============================================================================
 
-function isSelectionCollapsed(editor: Editor) {
-	return _.isEqual(editor.selection?.anchor, editor.selection?.focus)
-}
-
 function isAnnotationInSelection(editor: Editor, annotation: TextAnnotation) {
 	const [match] = Editor.nodes(editor, {
 		match: (n) => n[annotation] === true,
@@ -261,7 +279,7 @@ function toggleSelectedTextAnnotation(
 	editor: Editor,
 	annotation: TextAnnotation
 ) {
-	if (isSelectionCollapsed(editor)) {
+	if (editor.selection && Range.isCollapsed(editor.selection)) {
 		return
 	}
 	const isActive = isAnnotationInSelection(editor, annotation)
@@ -284,6 +302,26 @@ const textAnnotationHotkeys: Record<TextAnnotation, string> = {
 // ============================================================================
 
 function withShortcuts(editor: ReactEditor) {
+	const { insertBreak } = editor
+
+	editor.insertBreak = () => {
+		// TODO: really just if the selection starts in a code block.
+		if (isBlockTypeInSelection(editor, "code")) {
+			Editor.insertText(editor, "\n")
+			return
+		}
+
+		insertBreak()
+
+		// Pressing return inside an H1 should create a new paragraph.
+		for (const type of objectKeys(resetBlockTypes)) {
+			if (resetBlockTypes[type]) {
+				if (isBlockTypeInSelection(editor, type)) {
+					transformSelectedBlocks(editor, "paragraph")
+				}
+			}
+		}
+	}
 	return editor
 }
 
@@ -302,15 +340,6 @@ export function MyEditor() {
 	])
 
 	const handleKeyDown = React.useCallback((event: React.KeyboardEvent) => {
-		// Soft break for code blocks
-		if (event.key === "Enter") {
-			// TODO: really just if the selection starts in a code block.
-			if (isBlockTypeInSelection(editor, "code")) {
-				event.preventDefault()
-				Editor.insertText(editor, "\n")
-			}
-		}
-
 		// Text annotation shortcuts.
 		for (const [annotation, hotkey] of objectEntries(textAnnotationHotkeys)) {
 			if (isHotkey(hotkey, event.nativeEvent)) {
