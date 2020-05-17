@@ -40,41 +40,44 @@ Todo:
 - [x] types
 	- [x] file a typescript issue
 				https://github.com/ianstormtaylor/slate/issues/3680
-
 - [x] better types and generalization
 - [x] toggle bold with collapsed selection check.
 - [x] toolbar for block types and annotations.
-
 - [x] list-item coersion
 - [x] reset paragraph on enter block types.
-
 - [x] markdown autocomplete basics
 	- [x] undo to leave it alone.
-
-- [ ] popups for keyboard shortcuts.
-- [ ] text selection from the gutters.
-- [ ] code block internal newlines
-- [ ] bulleted list logic.
-
-- [ ] inline code should be an inline element.
 
 - [ ] load and persist to database
 - [ ] nested pages
 
+- [ ] annotation extends cursor shortcuts.
+- [ ] popups for keyboard shortcuts.
+- [ ] text selection from the gutters.
+- [ ] drag and drop blocks with handle on the left.
+- [ ] inline code should be an inline element so it doesnt break tokens.
+- [ ] inline link popup
+- [ ] inline tag autocomplete ux.
 
 - [ ] command prompt
-- polish
-	- linkify
-	- arrow complete ->
-	- more block types
-	- more annotations
-	- more markdown completions
-	- keyboard option+up blocks
-	- tags + tag completion
-- images
-- simple embeds
-- nested page
-- block selection outside of slate?
+
+polish
+- [ ] linkify
+- [ ] arrow complete ->
+- [ ] more block types
+	- [ ] images
+	- [ ] file upload
+	- [ ] youtube embed
+		- [ ] iframe
+	- [ ] callout
+	- [ ] divider
+- [ ] annotations
+	- [ ] block color
+	- [ ] text color
+	- [ ] underline
+	- [ ] overline
+- [ ] markdown completions
+- [ ] keyboard option+up move blocks.
 
 */
 
@@ -576,30 +579,3 @@ function renderLeaf(props: RenderLeafProps) {
 		</span>
 	)
 }
-
-// const withImages = editor => {
-//   const { isVoid } = editor
-
-//   editor.isVoid = element => {
-//     return element.type === 'image' ? true : isVoid(editor)
-//   }
-
-//   return editor
-// }
-
-// import { Editor, Element } from 'slate'
-
-// const MyEditor = {
-//   ...Editor,
-//   insertImage(editor, url) {
-//     const element = { type: 'image', url, children: [{ text: '' }] }
-//     Transforms.insertNodes(editor, element)
-//   },
-// }
-
-// const MyElement = {
-//   ...Element,
-//   isImageElement(value) {
-//     return Element.isElement(element) && element.type === 'image'
-//   },
-// }
