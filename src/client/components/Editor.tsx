@@ -4,6 +4,7 @@
 
 */
 
+import * as _ from "lodash"
 import React, { useMemo, useState, CSSProperties } from "react"
 import { createEditor, Node, Editor, Element, Text, Transforms } from "slate"
 import {
@@ -190,6 +191,10 @@ function toggleSelectedBlocks(
 // Text Helpers.
 // ============================================================================
 
+function isSelectionCollapsed(editor: Editor) {
+	return _.isEqual(editor.selection?.anchor, editor.selection?.focus)
+}
+
 function isAnnotationInSelection(editor: Editor, annotation: TextAnnotation) {
 	const [match] = Editor.nodes(editor, {
 		match: (n) => n[annotation] === true,
@@ -215,6 +220,9 @@ function toggleSelectedTextAnnotation(
 	editor: Editor,
 	annotation: TextAnnotation
 ) {
+	if (isSelectionCollapsed(editor)) {
+		return
+	}
 	const isActive = isAnnotationInSelection(editor, annotation)
 	if (isActive) {
 		setSelectedTextAnnotation(editor, annotation, false)
