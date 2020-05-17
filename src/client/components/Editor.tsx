@@ -31,6 +31,7 @@ import {
 	objectEntries,
 	objectKeys,
 } from "../../shared/typeUtils"
+import { withHistory } from "slate-history"
 
 /*
 Todo:
@@ -376,7 +377,10 @@ function withExtensions(editor: ReactEditor) {
 // ============================================================================
 
 export function MyEditor() {
-	const editor = useMemo(() => withExtensions(withReact(createEditor())), [])
+	const editor = useMemo(
+		() => withExtensions(withReact(withHistory(createEditor()))),
+		[]
+	)
 
 	const [value, setValue] = useState<Array<Node>>([
 		{
