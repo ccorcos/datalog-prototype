@@ -5,7 +5,7 @@
 */
 
 import * as _ from "lodash"
-import React, { useMemo, useState, CSSProperties } from "react"
+import React, { useMemo, useState, CSSProperties, useCallback } from "react"
 import { createEditor, Node, Editor, Element, Text, Transforms } from "slate"
 import {
 	Slate,
@@ -13,6 +13,8 @@ import {
 	withReact,
 	RenderElementProps,
 	RenderLeafProps,
+	useSlate,
+	ReactEditor,
 } from "slate-react"
 import isHotkey from "is-hotkey"
 import { unionTypeValues, objectEntries } from "../../shared/typeUtils"
@@ -26,11 +28,15 @@ Todo:
 				https://github.com/ianstormtaylor/slate/issues/3680
 
 - [x] better types and generalization
-- [ ] toggle bold with collapsed selection check.
-- [ ] inline code should be an inline element.
-
-- [ ] toolbar for block types and annotations.
+- [x] toggle bold with collapsed selection check.
+- [x] toolbar for block types and annotations.
 	- [ ] popups for keyboard shortcuts.
+
+- [ ] text selection from the gutters.
+- [ ] code block internal newlines
+- [ ] bulleted list logic.
+
+- [ ] inline code should be an inline element.
 
 - [ ] markdown autocomplete basics
 
@@ -90,7 +96,7 @@ interface HeadingTwoElement {
 }
 
 interface HeadingThreeElement {
-	type: "heading-Three"
+	type: "heading-three"
 	children: Array<InlineElement | TextMarkup>
 }
 
@@ -113,7 +119,7 @@ const blockTypes = unionTypeValues<BlockType>({
 	"numbered-list": true,
 	"heading-one": true,
 	"heading-two": true,
-	"heading-Three": true,
+	"heading-three": true,
 })
 
 interface LinkElement {
@@ -200,7 +206,6 @@ function isAnnotationInSelection(editor: Editor, annotation: TextAnnotation) {
 		match: (n) => n[annotation] === true,
 		universal: true,
 	})
-	console.log("isAnnotationInSelection", annotation, match)
 	return Boolean(match)
 }
 
@@ -266,13 +271,81 @@ export function MyEditor() {
 	}, [])
 
 	return (
-		<Slate editor={editor} value={value} onChange={(value) => setValue(value)}>
-			<Editable
-				renderElement={renderElement}
-				renderLeaf={renderLeaf}
-				onKeyDown={handleKeyDown}
-			/>
-		</Slate>
+		<div
+			style={{
+				padding: "2em 1em",
+				maxWidth: "45em",
+				margin: "0 auto",
+			}}
+		>
+			<Slate
+				editor={editor}
+				value={value}
+				onChange={(value) => setValue(value)}
+			>
+				<Toolbar />
+				<Editable
+					renderElement={renderElement}
+					renderLeaf={renderLeaf}
+					onKeyDown={handleKeyDown}
+				/>
+			</Slate>
+		</div>
+	)
+}
+
+function Toolbar() {
+	return (
+		<div>
+			<div>
+				{blockTypes.map((type) => (
+					<BlockTypeButton key={type} type={type} />
+				))}
+			</div>
+			<div>
+				{textAnnotations.map((annotation) => (
+					<AnnotationButton key={annotation} annotation={annotation} />
+				))}
+			</div>
+		</div>
+	)
+}
+
+function BlockTypeButton(props: { type: BlockType }) {
+	const { type } = props
+	const editor = useSlate()
+	const isActive = isBlockTypeInSelection(editor, type)
+
+	const handleClick = useCallback(() => {
+		toggleSelectedBlocks(editor, type)
+		if (editor.selection) {
+			ReactEditor.focus(editor)
+		}
+	}, [editor, type])
+
+	return (
+		<button style={isActive ? { color: "red" } : {}} onClick={handleClick}>
+			{type}
+		</button>
+	)
+}
+
+function AnnotationButton(props: { annotation: TextAnnotation }) {
+	const { annotation } = props
+	const editor = useSlate()
+	const isActive = isAnnotationInSelection(editor, annotation)
+
+	const handleClick = () => {
+		toggleSelectedTextAnnotation(editor, annotation)
+		if (editor.selection) {
+			ReactEditor.focus(editor)
+		}
+	}
+
+	return (
+		<button style={isActive ? { color: "red" } : {}} onClick={handleClick}>
+			{annotation}
+		</button>
 	)
 }
 
@@ -284,17 +357,51 @@ function CodeElement(props: RenderElementProps) {
 	)
 }
 
-function DefaultElement(props: RenderElementProps) {
+function ParagraphElement(props: RenderElementProps) {
 	return <p {...props.attributes}>{props.children}</p>
 }
 
+function QuoteElement(props: RenderElementProps) {
+	return <blockquote {...props.attributes}>{props.children}</blockquote>
+}
+
+function BulletedListElement(props: RenderElementProps) {
+	return <ul {...props.attributes}>{props.children}</ul>
+}
+
+function NumberedListElement(props: RenderElementProps) {
+	return <ol {...props.attributes}>{props.children}</ol>
+}
+
+function HeadingOneElement(props: RenderElementProps) {
+	return <h1 {...props.attributes}>{props.children}</h1>
+}
+
+function HeadingTwoElement(props: RenderElementProps) {
+	return <h2 {...props.attributes}>{props.children}</h2>
+}
+
+function HeadingThreeElement(props: RenderElementProps) {
+	return <h3 {...props.attributes}>{props.children}</h3>
+}
+
+const blockElementRenderers: Record<
+	BlockType,
+	(props: RenderElementProps) => JSX.Element
+> = {
+	paragraph: ParagraphElement,
+	code: CodeElement,
+	quote: QuoteElement,
+	"bulleted-list": BulletedListElement,
+	"numbered-list": NumberedListElement,
+	"heading-one": HeadingOneElement,
+	"heading-two": HeadingTwoElement,
+	"heading-three": HeadingThreeElement,
+}
+
 function renderElement(props: RenderElementProps) {
-	switch (props.element.type) {
-		case "code":
-			return <CodeElement {...props} />
-		default:
-			return <DefaultElement {...props} />
-	}
+	const type = props.element.type as BlockType
+	return blockElementRenderers[type](props)
 }
 
 const textAnnotationStyles: Record<TextAnnotation, CSSProperties> = {
