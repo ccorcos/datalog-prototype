@@ -31,7 +31,7 @@ import {
 	objectEntries,
 	objectKeys,
 } from "../../shared/typeUtils"
-import { withHistory } from "slate-history"
+import { withHistory, HistoryEditor } from "slate-history"
 
 /*
 Todo:
@@ -49,7 +49,7 @@ Todo:
 - [x] reset paragraph on enter block types.
 
 - [x] markdown autocomplete basics
-	- [ ] undo to leave it alone.
+	- [x] undo to leave it alone.
 
 - [ ] popups for keyboard shortcuts.
 - [ ] text selection from the gutters.
@@ -327,21 +327,31 @@ function withExtensions(editor: ReactEditor) {
 	const { insertText } = editor
 	editor.insertText = (text) => {
 		// Autocomplete dash into bulleted list.
-		if (editor.selection && Range.isCollapsed(editor.selection)) {
+		if (
+			editor.selection &&
+			Range.isCollapsed(editor.selection) &&
+			text === " "
+		) {
 			// TODO: we want to make sure we're transforming the correct block types.
 			const block = Editor.above(editor, {
 				match: (n) => Editor.isBlock(editor, n),
 			})
 			const path = block ? block[1] : []
 			const start = Editor.start(editor, path)
+
+			// NOTE: inserting text mutates the selection!
+			insertText(text)
 			const range = { anchor: editor.selection.anchor, focus: start }
 			const beforeText = Editor.string(editor, range)
-			if (beforeText === "-") {
+			if (beforeText === "- ") {
+				// Create an undo checkpoint here so we can come back to it.
 				Transforms.select(editor, range)
-				Transforms.delete(editor)
+				HistoryEditor.withoutMerging(editor as any, () => {
+					Transforms.delete(editor)
+				})
 				transformSelectedBlocks(editor, "bulleted-list")
-				return
 			}
+			return
 		}
 
 		insertText(text)
