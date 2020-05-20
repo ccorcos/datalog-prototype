@@ -1,4 +1,4 @@
-console.log = () => null
+// console.log = () => null
 
 import * as React from "react"
 import * as ReactDOM from "react-dom"

@@ -99,10 +99,11 @@ const subscribeComponents: { [subscriptionId: string]: () => void } = {}
 type SubscribeProps = {
 	query: Query
 	render: (bindings: Array<Binding>) => React.ReactNode
+	localOnly?: boolean
 }
 
-export function Subscribe({ query, render }: SubscribeProps) {
-	return render(useQuery(query)) as React.ReactElement
+export function Subscribe({ query, render, localOnly }: SubscribeProps) {
+	return render(useQuery(query, localOnly)) as React.ReactElement
 }
 
 function useMemoDeepEqual<T>(value: T) {
@@ -115,7 +116,7 @@ function useMemoDeepEqual<T>(value: T) {
 	return ref.current as T
 }
 
-export function useQuery(newQuery: Query) {
+export function useQuery(newQuery: Query, localOnly = false) {
 	const query = useMemoDeepEqual(newQuery)
 	const id = React.useMemo(createUuid, [query])
 
@@ -133,14 +134,19 @@ export function useQuery(newQuery: Query) {
 		const result = evaluateQuery(database, query)
 		setState(result.bindings)
 
-		// Create a subscription on the server.
-		wsSend({ type: "subscribe", query })
+		if (!localOnly) {
+			// Create a subscription on the server.
+			wsSend({ type: "subscribe", query })
+		}
 
 		return () => {
 			// Cleean up subscription locally.
 			destroySubscription(subscriptions, query, id)
 			delete subscribeComponents[id]
-			wsSend({ type: "unsubscribe", query })
+			if (!localOnly) {
+				// TODO: should probably clean up the facts from the in-memory cache.
+				wsSend({ type: "unsubscribe", query })
+			}
 		}
 	}, [query, id])
 

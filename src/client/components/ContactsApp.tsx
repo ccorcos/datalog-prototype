@@ -58,7 +58,9 @@ export function ContactsApp() {
 				</h2>
 				<div style={{ padding: 16, paddingTop: 0 }}>
 					{ids.map((id) => (
-						<ContactItem key={id} id={id} />
+						<div>
+							<ContactItem key={id} id={id} />
+						</div>
 					))}
 				</div>
 			</div>
@@ -79,9 +81,12 @@ function ContactItem(props: { id: string }) {
 }
 
 function ContactFirstName(props: { id: string }) {
-	const bindings = useQuery({
-		statements: [[props.id, "firstName", "?firstName"]],
-	})
+	const bindings = useQuery(
+		{
+			statements: [[props.id, "firstName", "?firstName"]],
+		},
+		true
+	)
 	const firstNames = bindings
 		.map(({ firstName }) => firstName)
 		.filter(_.isString)
@@ -93,9 +98,12 @@ function ContactFirstName(props: { id: string }) {
 }
 
 function ContactLastName(props: { id: string }) {
-	const bindings = useQuery({
-		statements: [[props.id, "lastName", "?lastName"]],
-	})
+	const bindings = useQuery(
+		{
+			statements: [[props.id, "lastName", "?lastName"]],
+		},
+		true
+	)
 	const lastNames = bindings.map(({ lastName }) => lastName).filter(_.isString)
 
 	// TODO: conflict resolution

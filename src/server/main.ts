@@ -1,4 +1,4 @@
-console.log = () => null
+// console.log = () => null
 
 import express from "express"
 import morgan from "morgan"
