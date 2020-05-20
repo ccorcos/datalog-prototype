@@ -21,7 +21,11 @@ import {
 	evaluateQuery,
 	Binding,
 } from "../../shared/database/queryHelpers"
-import { Message, TransactionMessage } from "../../shared/protocol"
+import {
+	TransactionMessage,
+	BasicMessage,
+	BatchMessage,
+} from "../../shared/protocol"
 import { BatchedQueue } from "../../shared/BatchedQueue"
 
 // A local cache of only the facts relevant to the client.
@@ -37,32 +41,37 @@ const ready = new Promise<void>((resolve) => {
 })
 
 // Enforce message types and wait for the websocket connection.
-async function wsSend(message: Message) {
-	await ready
-	ws.send(JSON.stringify(message))
+async function wsSend(message: BasicMessage) {
+	return queue.enqueue(message)
 }
 
-// const queue = new BatchedQueue((messages: Array<Message>) )
-
-// async function wsSendBatch(message: Message) {
-// 	await ready
-// 	ws.send(JSON.stringify(message))
-// }
+const queue = new BatchedQueue<BasicMessage, void>(async (messages) => {
+	await ready
+	const message: BatchMessage = {
+		type: "batch",
+		messages,
+	}
+	ws.send(JSON.stringify(message))
+	return messages.map(() => undefined)
+}, 100)
 
 // Listen for data from the server. Add facts to local cache and
 // broadcast updates to all listening <Subscribe/> components.
 ws.onmessage = (x) => {
-	const message: TransactionMessage = JSON.parse(x.data)
-	if (message.type === "transaction") {
-		console.log("<- write", message.transaction)
-		const broadcast = submitTransaction({
-			subscriptions,
-			database,
-			transaction: message.transaction,
-		})
-		console.log("<- broadcast", Object.keys(broadcast).length)
-		for (const subscribeId of Object.keys(broadcast)) {
-			subscribeComponents[subscribeId]()
+	const message: BatchMessage = JSON.parse(x.data)
+	for (const msg of message.messages) {
+		const m = msg as TransactionMessage
+		if (m.type === "transaction") {
+			console.log("<- write", m.transaction)
+			const broadcast = submitTransaction({
+				subscriptions,
+				database,
+				transaction: m.transaction,
+			})
+			console.log("<- broadcast", Object.keys(broadcast).length)
+			for (const subscribeId of Object.keys(broadcast)) {
+				subscribeComponents[subscribeId]()
+			}
 		}
 	}
 }

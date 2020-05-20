@@ -18,4 +18,11 @@ export type TransactionMessage = {
 	transaction: Transaction
 }
 
-export type Message = SubscribeMessage | UnsubscribeMessage | TransactionMessage
+export type BasicMessage =
+	| SubscribeMessage
+	| UnsubscribeMessage
+	| TransactionMessage
+
+export type BatchMessage = { type: "batch"; messages: Array<BasicMessage> }
+
+export type Message = BasicMessage | BatchMessage

@@ -1,3 +1,5 @@
+console.log = () => null
+
 import express from "express"
 import morgan from "morgan"
 import WebSocket from "ws"
@@ -16,9 +18,10 @@ import {
 	destroySubscription,
 	destroyAllSubscriptions,
 } from "../shared/database/subscriptionHelpers"
-import { Message } from "../shared/protocol"
+import { Message, BasicMessage, BatchMessage } from "../shared/protocol"
 import { unreachable } from "../shared/typeUtils"
 import { createInMemoryDatabase } from "../shared/database/memory"
+import { BatchedQueue } from "../shared/BatchedQueue"
 
 const app = express()
 app.use(morgan("dev"))
@@ -93,8 +96,79 @@ const subscriptions = createInMemoryDatabase()
 const sockets: { [socketId: string]: WebSocket } = {}
 
 /** A type-safe helper for sending websocket messages */
-function wsSend(ws: WebSocket, message: Message) {
-	ws.send(JSON.stringify(message))
+function wsSend(ws: WebSocket, message: BasicMessage) {
+	return getQueue(ws).enqueue(message)
+}
+
+const queues = new WeakMap<WebSocket, BatchedQueue<BasicMessage, void>>()
+
+function getQueue(ws: WebSocket) {
+	const existingQueue = queues.get(ws)
+	if (existingQueue) {
+		return existingQueue
+	}
+
+	const queue = new BatchedQueue<BasicMessage, void>(async (messages) => {
+		const message: BatchMessage = {
+			type: "batch",
+			messages,
+		}
+		console.log("send")
+		ws.send(JSON.stringify(message))
+		return messages.map(() => undefined)
+	}, 100)
+
+	queues.set(ws, queue)
+	queue.onEmpty().then(() => {
+		queues.delete(ws)
+	})
+
+	return queue
+}
+
+function handleMessage(
+	message: BasicMessage,
+	thisSocketId: string,
+	ws: WebSocket
+) {
+	if (message.type === "transaction") {
+		console.log("<- write")
+		// Enqueue a transaction to write serially.
+		const broadcast = submitTransaction({
+			subscriptions,
+			database,
+			transaction: message.transaction,
+		})
+
+		const entries = Object.entries(broadcast).filter(
+			([socketId]) => socketId !== thisSocketId
+		)
+		if (entries.length) {
+			console.log(" -> broadcast", entries.length)
+			for (const [socketId, transaction] of entries) {
+				const ws = sockets[socketId]
+				wsSend(ws, { type: "transaction", transaction })
+			}
+		}
+	} else if (message.type === "subscribe") {
+		console.log("<- subscribe")
+
+		// Register the subscription for the client.
+		createSubscription(subscriptions, message.query, thisSocketId)
+
+		// Evaluate the query, then send all the relevant facts to the client.
+		const results = evaluateQuery(database, message.query)
+		const transaction: Transaction = {
+			sets: results.facts,
+			unsets: [],
+		}
+		wsSend(ws, { type: "transaction", transaction })
+	} else if (message.type === "unsubscribe") {
+		console.log("<- unsubscribe")
+		destroySubscription(subscriptions, message.query, thisSocketId)
+	} else {
+		unreachable(message)
+	}
 }
 
 wss.on("connection", (ws) => {
@@ -106,43 +180,12 @@ wss.on("connection", (ws) => {
 		// Handle messages from the client.
 		const message: Message = JSON.parse(data.toString())
 
-		if (message.type === "transaction") {
-			console.log("<- write")
-			// Enqueue a transaction to write serially.
-			const broadcast = submitTransaction({
-				subscriptions,
-				database,
-				transaction: message.transaction,
-			})
-
-			const entries = Object.entries(broadcast).filter(
-				([socketId]) => socketId !== thisSocketId
-			)
-			if (entries.length) {
-				console.log(" -> broadcast", entries.length)
-				for (const [socketId, transaction] of entries) {
-					const ws = sockets[socketId]
-					wsSend(ws, { type: "transaction", transaction })
-				}
+		if (message.type === "batch") {
+			for (const msg of message.messages) {
+				handleMessage(msg, thisSocketId, ws)
 			}
-		} else if (message.type === "subscribe") {
-			console.log("<- subscribe")
-
-			// Register the subscription for the client.
-			createSubscription(subscriptions, message.query, thisSocketId)
-
-			// Evaluate the query, then send all the relevant facts to the client.
-			const results = evaluateQuery(database, message.query)
-			const transaction: Transaction = {
-				sets: results.facts,
-				unsets: [],
-			}
-			wsSend(ws, { type: "transaction", transaction })
-		} else if (message.type === "unsubscribe") {
-			console.log("<- unsubscribe")
-			destroySubscription(subscriptions, message.query, thisSocketId)
 		} else {
-			unreachable(message)
+			handleMessage(message, thisSocketId, ws)
 		}
 	})
 

@@ -34,7 +34,7 @@ const contents = fs.readFileSync(
 )
 const contacts = JSON.parse("[" + contents.replace(/\}\n\{/g, "},\n{") + "]")
 
-for (const contact of contacts.slice(0, 100)) {
+for (const contact of contacts.slice(0, 10000)) {
 	const id = contact["UID"]
 	const firstName = contact["First"]
 	const lastName = contact["Last"]
