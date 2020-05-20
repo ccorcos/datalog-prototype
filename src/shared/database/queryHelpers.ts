@@ -98,8 +98,6 @@ function evaluateClause(
 	database: Database,
 	clause: Clause
 ): { bindings: Array<Binding>; facts: Array<Fact> } {
-	console.log("evaluateClause", clause)
-
 	if (clause.length === 0) {
 		return { bindings: [], facts: [] }
 	}

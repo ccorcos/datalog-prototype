@@ -34,13 +34,26 @@ export function ContactsApp() {
 	const ids = _.uniq(bindings.map(({ id }) => id).filter(_.isString))
 
 	return (
-		<div style={{ display: "flex" }}>
-			<div style={{ width: "20em" }}>
-				<div>Contacts</div>
-				{ids.map((id) => (
-					<ContactItem key={id} id={id} />
-				))}
+		<div style={{ display: "flex", height: "100vh" }}>
+			<div style={{ width: "20em", overflow: "auto" }}>
+				<h2
+					style={{
+						position: "sticky",
+						top: 0,
+						margin: 0,
+						padding: 16,
+						background: "white",
+					}}
+				>
+					Contacts
+				</h2>
+				<div style={{ padding: 16, paddingTop: 0 }}>
+					{ids.map((id) => (
+						<ContactItem key={id} id={id} />
+					))}
+				</div>
 			</div>
+			<div style={{ padding: 16 }}>Select a contact on the left.</div>
 		</div>
 	)
 }
@@ -48,8 +61,10 @@ export function ContactsApp() {
 function ContactItem(props: { id: string }) {
 	return (
 		<div>
-			<ContactFirstName {...props} />
-			<ContactLastName {...props} />
+			<ContactFirstName {...props} />{" "}
+			<strong>
+				<ContactLastName {...props} />
+			</strong>
 		</div>
 	)
 }

@@ -11,6 +11,10 @@ css.global("a", {
 	textDecoration: "none",
 })
 
+css.global("html, body", {
+	margin: 0,
+})
+
 const root = document.createElement("div")
 document.body.appendChild(root)
 
