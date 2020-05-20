@@ -11,17 +11,23 @@ import * as _ from "lodash"
 /*
 
 TODO:
-- UI Query for selected contact.
-- import maybe just the first 100 contacts and consider performance.
-	- looks like a problem with subscribing to things we don't even need.
-	1. we could check to see if we already have a subsciption that covers the
-		 and then don't subscribe... but if we unsubscribe from the other query,
-		 then its unclear if we need to create a new subscription or not.
-		 - it would make sense then to pass down fragments almost, kind of like
-			 graphql, but then you end up with a big subscription which is not ideal
-			 either.
-	Hmm. Maybe its just a problem of batching a network overhead... Lets try that.
+- Performance Stuff:
+	- Issue is caused by 1600*2 + 1 subscriptions (for 1600 contacts).
+	Solutions:
+	1. we could use react-virtualized and use paging.
+		 This is not an ideal solution though because this will eventually become
+		 a problem somewhere else when we want to load a lot of data.
+	2. we can add some logic to detect if we've already queried some data before.
+		 Maybe a better approach is to hardcode the queries somewhere so we can
+		 simply reuse the top-level query, add a bind statement at the top and
+		 the whole thing will get re-used because there's already a query subscription.
+		 REALIZATION: this is why a shard key is important -- if this were a full-scaled
+		 contacts app, then this reactivity model wouldnt work well if someone wanted to
+		 change some contact's name. Thus we'd want to narrow down the scope of the
+		 reactivity for that record. And a shard is a natural way to do that. Ideally
+		 the shard just represented the user or some permission context.
 
+- UI Query for selected contact.
 - primary key on EAV so all facts are deduped (use UPSERT?).
 
 */
