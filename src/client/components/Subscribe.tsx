@@ -22,6 +22,7 @@ import {
 	Binding,
 } from "../../shared/database/queryHelpers"
 import { Message, TransactionMessage } from "../../shared/protocol"
+import { BatchedQueue } from "../../shared/BatchedQueue"
 
 // A local cache of only the facts relevant to the client.
 const database = createInMemoryDatabase()
@@ -40,6 +41,13 @@ async function wsSend(message: Message) {
 	await ready
 	ws.send(JSON.stringify(message))
 }
+
+// const queue = new BatchedQueue((messages: Array<Message>) )
+
+// async function wsSendBatch(message: Message) {
+// 	await ready
+// 	ws.send(JSON.stringify(message))
+// }
 
 // Listen for data from the server. Add facts to local cache and
 // broadcast updates to all listening <Subscribe/> components.

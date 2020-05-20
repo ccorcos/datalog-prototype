@@ -11,8 +11,17 @@ import * as _ from "lodash"
 /*
 
 TODO:
-- import maybe just the first 100 contacts.
-- consider performance.
+- UI Query for selected contact.
+- import maybe just the first 100 contacts and consider performance.
+	- looks like a problem with subscribing to things we don't even need.
+	1. we could check to see if we already have a subsciption that covers the
+		 and then don't subscribe... but if we unsubscribe from the other query,
+		 then its unclear if we need to create a new subscription or not.
+		 - it would make sense then to pass down fragments almost, kind of like
+			 graphql, but then you end up with a big subscription which is not ideal
+			 either.
+	Hmm. Maybe its just a problem of batching a network overhead... Lets try that.
+
 - primary key on EAV so all facts are deduped (use UPSERT?).
 
 */

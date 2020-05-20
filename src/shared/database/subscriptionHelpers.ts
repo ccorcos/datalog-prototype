@@ -66,8 +66,8 @@ export function destroySubscription(
 	})
 
 	const subscriptionIds = bindings
-		.map(binding => binding.subscriptionId)
-		.filter(id => id !== subscriptionId)
+		.map((binding) => binding.subscriptionId)
+		.filter((id) => id !== subscriptionId)
 
 	if (subscriptionIds.length === 0) {
 		// Tear down the entire subscription if there are no more subscriptions.
@@ -172,8 +172,8 @@ export function evaluateSubscriptionUpdates(
 
 		// Replace the unknowns in the Query to effectively solve for the inverse.
 		const inverseQuery: Query = {
-			statements: query.statements.map(statement => {
-				return statement.map(token => {
+			statements: query.statements.map((statement) => {
+				return statement.map((token) => {
 					if (typeof token !== "string") {
 						return token
 					}
