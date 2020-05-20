@@ -25,7 +25,17 @@ TODO:
 		 contacts app, then this reactivity model wouldnt work well if someone wanted to
 		 change some contact's name. Thus we'd want to narrow down the scope of the
 		 reactivity for that record. And a shard is a natural way to do that. Ideally
-		 the shard just represented the user or some permission context.
+		 the shard just represents the user or some permission context.
+	Action Plan:
+	- Need to upgrade some database stuff.
+		- separate query from bindings.
+		That's it for now. But there's a lot of other stuff to get to...
+		- Paging.
+		- Indexing
+		- Fix up unsubscribe cleanup
+		- Proper tests.
+		Maybe we should build out a spec for the database and just churn on that for a little bit.
+
 
 - UI Query for selected contact.
 - primary key on EAV so all facts are deduped (use UPSERT?).
