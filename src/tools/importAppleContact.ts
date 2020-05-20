@@ -2,28 +2,50 @@
 
 Extract contacts using https://github.com/ccorcos/contacts
 
-./node_modules/.bin/ts-node stc/tools/importAppleContacts.ts
+./node_modules/.bin/ts-node src/tools/importAppleContact.ts
 
 */
 
 import * as fs from "fs-extra"
 import { rootPath } from "../shared/rootPath"
 import { createSQLiteDatabase } from "../shared/database/sqlite"
-import { write } from "../client/components/Subscribe"
+import { createInMemoryDatabase } from "../shared/database/memory"
+import {
+	submitTransaction,
+	Transaction,
+} from "../shared/database/submitTransaction"
 
 const dbPath = rootPath("database.json")
 console.log(dbPath)
 const database = createSQLiteDatabase(rootPath("eav.db"))
+const subscriptions = createInMemoryDatabase()
 
-const contacts = fs.readJsonSync("/Users/chet/Code/contacts/contacts.json")
+function write(transaction: Transaction) {
+	submitTransaction({
+		subscriptions,
+		database,
+		transaction,
+	})
+}
 
-for (const contact of contacts) {
-	const id = contact["IUD"]
+const contents = fs.readFileSync(
+	"/Users/chet/Code/contacts/contacts.json",
+	"utf8"
+)
+const contacts = JSON.parse("[" + contents.replace(/\}\n\{/g, "},\n{") + "]")
+
+for (const contact of contacts.slice(0, 100)) {
+	const id = contact["UID"]
 	const firstName = contact["First"]
 	const lastName = contact["Last"]
 	const note = contact["Note"]
 
 	const obj = { firstName, lastName, note }
+
+	write({
+		sets: [[id, "type", "person"]],
+		unsets: [],
+	})
 
 	for (const [key, value] of Object.entries(obj)) {
 		if (value) {

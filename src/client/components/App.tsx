@@ -5,7 +5,9 @@
 */
 
 import React from "react"
-import { MyEditor } from "./Editor"
+import { ContactsApp } from "./ContactsApp"
+// import { TodoMVC } from "./TodoMVC"
+// import { MyEditor } from "./Editor"
 
 type AppProps = {}
 type AppState = {}
@@ -16,6 +18,6 @@ export class App extends React.Component<AppProps, AppState> {
 	}
 
 	render() {
-		return <MyEditor />
+		return <ContactsApp />
 	}
 }

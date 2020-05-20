@@ -1,5 +1,7 @@
 ## To Do / What's Next
 
+- micro is better than macro. build something for me. what do I want?
+
 https://www.notion.so/e63e3224c240470e8ea82cea0af4fa23#f3d1d2e10645465791a772e5c7e32965
 - TodoMVC
 	- implement indexing and paging
